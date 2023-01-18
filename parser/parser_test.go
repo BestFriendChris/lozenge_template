@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/BestFriendChris/go-ic/ic"
-	th "github.com/BestFriendChris/lozenge/handler/test_handler"
+	th "github.com/BestFriendChris/lozenge/handler/main_handler"
 	. "github.com/BestFriendChris/lozenge/parser"
 )
 
@@ -377,7 +377,7 @@ DONE`[1:]
 	macros := map[string]Macro{
 		"CustomFoo": func(p Parser, s string) (string, error) {
 			before, after, _ := strings.Cut(s, ")")
-			p.H.WriteContent(fmt.Sprintf("CUSTOM %s", before[1:]))
+			p.Handler().WriteContent(fmt.Sprintf("CUSTOM %s", before[1:]))
 			return after, nil
 		},
 	}
@@ -445,7 +445,7 @@ DONE
 	macros := map[string]Macro{
 		"CustomFoo": func(p Parser, s string) (string, error) {
 			before, after, _ := strings.Cut(s, ")")
-			p.H.WriteContent(fmt.Sprintf("CUSTOM %s", before[1:]))
+			p.Handler().WriteContent(fmt.Sprintf("CUSTOM %s", before[1:]))
 			return after, nil
 		},
 	}
@@ -554,7 +554,7 @@ func ParseWithTestHandlerWithMacros(t testing.TB, s string, macros map[string]Ma
 
 func ParseWithTestHandlerWithMacrosWithConfig(t testing.TB, s string, macros map[string]Macro, config ParserConfig) string {
 	t.Helper()
-	testHandler := th.TestHandler{}
+	testHandler := th.MainHandler{}
 	p := New(&testHandler, macros, config)
 
 	output, e := p.Parse(s)

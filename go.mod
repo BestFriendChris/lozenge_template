@@ -3,6 +3,7 @@ module github.com/BestFriendChris/lozenge
 go 1.19
 
 require (
+	github.com/BestFriendChris/go-ic v0.0.0-20230116235856-1ab0b55a47b2
 	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
 	mvdan.cc/gofumpt v0.4.0
 )

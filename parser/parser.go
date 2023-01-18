@@ -6,19 +6,28 @@ import (
 	"strings"
 	"unicode"
 
-	"mvdan.cc/gofumpt/format"
+	"github.com/BestFriendChris/lozenge/internal/infra/go_format"
 )
 
 type Macro func(Parser, string) (string, error)
 
-type Parser struct {
+type Parser interface {
+	ParseSubstring(rest string, s string) (string, error)
+	Handler() Handler
+}
+
+type DefaultParser struct {
 	H      Handler
 	macros map[string]Macro
 	config ParserConfig
 }
 
-func New(h Handler, macros map[string]Macro, config ParserConfig) Parser {
-	return Parser{
+func (p DefaultParser) Handler() Handler {
+	return p.H
+}
+
+func New(h Handler, macros map[string]Macro, config ParserConfig) DefaultParser {
+	return DefaultParser{
 		H:      h,
 		macros: defaultMacros(h.DefaultMacros(), macros),
 		config: config,
@@ -43,14 +52,16 @@ func defaultMacros(handlerMacros, overrideMacros map[string]Macro) map[string]Ma
 	return ms
 }
 
-var formatOptions = format.Options{LangVersion: "1.19"}
-
-func (p Parser) Parse(s string) (string, error) {
+func (p DefaultParser) Parse(s string) (string, error) {
 	_, err := p.ParseSubstring(s, "")
 	if err != nil {
 		return "", err
 	}
-	return p.H.Done(formatOptions)
+	fullOutput, err := p.H.Done()
+	if err != nil {
+		return "", err
+	}
+	return go_format.Format(fullOutput)
 }
 
 func debug(s string, vals ...any) {
@@ -59,7 +70,7 @@ func debug(s string, vals ...any) {
 	}
 }
 
-func (p Parser) ParseSubstring(s, stopAt string) (rest string, err error) {
+func (p DefaultParser) ParseSubstring(s, stopAt string) (rest string, err error) {
 	var stopIdx, nextIdx int
 
 	stopIdx = -1
@@ -179,7 +190,7 @@ func (p Parser) ParseSubstring(s, stopAt string) (rest string, err error) {
 	return
 }
 
-func (p Parser) ParseCode(s string) (string, error) {
+func (p DefaultParser) ParseCode(s string) (string, error) {
 	switch {
 	case s[0] == ' ':
 		// "◊ " => "◊ "
@@ -198,7 +209,7 @@ func (p Parser) ParseCode(s string) (string, error) {
 
 	case s[0] == '.':
 		// Macro
-		after, err := p.parseCode_Macro(s)
+		after, err := p.parsecodeMacro(s)
 		if err != nil {
 			return "", err
 		}
@@ -206,7 +217,7 @@ func (p Parser) ParseCode(s string) (string, error) {
 
 	case s[0] == '{':
 		// Inline Block
-		after, err := p.parseCode_InlineBlock(s)
+		after, err := p.parseCodeInlineBlock(s)
 		if err != nil {
 			return "", err
 		}
@@ -214,7 +225,7 @@ func (p Parser) ParseCode(s string) (string, error) {
 
 	case s[0] == '(':
 		// Inline Expr
-		after, err := p.parseCode_InlineExpr(s)
+		after, err := p.parseCodeInlineExpr(s)
 		if err != nil {
 			return "", err
 		}
@@ -222,21 +233,21 @@ func (p Parser) ParseCode(s string) (string, error) {
 
 	case len(s) > 1 && s[0:2] == "^{":
 		// Global Block
-		after, err := p.parseCode_GlobalBlock(s)
+		after, err := p.parsecodeGlobalblock(s)
 		if err != nil {
 			return "", err
 		}
 		s = after
 
 	default:
-		before, after := p.parseCode_Identifier(s)
-		p.H.WriteCodeInline(before)
+		before, after := p.parsecodeIdentifier(s)
+		p.H.WriteCodeExpression(before)
 		s = after
 	}
 	return s, nil
 }
 
-func (p Parser) parseCode_InlineBlock(s string) (string, error) {
+func (p DefaultParser) parseCodeInlineBlock(s string) (string, error) {
 	numOfOpenBraces := 0
 	closeBraceIdx := -1
 loop:
@@ -253,13 +264,13 @@ loop:
 		}
 	}
 	if closeBraceIdx < 0 {
-		return "", fmt.Errorf("Unable to find closing brace in %q", s)
+		return "", fmt.Errorf("unable to find closing brace in %q", s)
 	}
 	p.H.WriteCodeBlock(s[1:closeBraceIdx])
 	return s[closeBraceIdx+1:], nil
 }
 
-func (p Parser) parseCode_InlineExpr(s string) (string, error) {
+func (p DefaultParser) parseCodeInlineExpr(s string) (string, error) {
 	numOfOpenParens := 0
 	closeParenIdx := -1
 loop:
@@ -276,13 +287,13 @@ loop:
 		}
 	}
 	if closeParenIdx < 0 {
-		return "", fmt.Errorf("Unable to find closing paren in %q", s)
+		return "", fmt.Errorf("unable to find closing paren in %q", s)
 	}
-	p.H.WriteCodeInline(s[:closeParenIdx])
+	p.H.WriteCodeExpression(s[:closeParenIdx])
 	return s[closeParenIdx:], nil
 }
 
-func (p Parser) parseCode_GlobalBlock(s string) (string, error) {
+func (p DefaultParser) parsecodeGlobalblock(s string) (string, error) {
 	numOfOpenBraces := 0
 	closeBraceIdx := -1
 loop:
@@ -299,22 +310,22 @@ loop:
 		}
 	}
 	if closeBraceIdx < 0 {
-		return "", fmt.Errorf("Unable to find closing brace in %q", s)
+		return "", fmt.Errorf("unable to find closing brace in %q", s)
 	}
 	p.H.WriteCodeGlobalBlock(s[2:closeBraceIdx])
 	return s[closeBraceIdx+1:], nil
 }
 
-func (p Parser) parseCode_Macro(s string) (string, error) {
-	macroName, rest := p.parseCode_Identifier(s[1:])
+func (p DefaultParser) parsecodeMacro(s string) (string, error) {
+	macroName, rest := p.parsecodeIdentifier(s[1:])
 	macro, found := p.macros[macroName]
 	if !found {
-		return "", fmt.Errorf("Unknown macro %q", macroName)
+		return "", fmt.Errorf("unknown macro %q", macroName)
 	}
 	return macro(p, rest)
 }
 
-func (p Parser) parseCode_Identifier(s string) (identifier, rest string) {
+func (p DefaultParser) parsecodeIdentifier(s string) (identifier, rest string) {
 	foundIdx := len(s)
 	for i, c := range s {
 		if c != '_' && !unicode.IsDigit(c) && !unicode.IsLetter(c) {
@@ -338,7 +349,7 @@ func macroIf(p Parser, s string) (string, error) {
 	if !found {
 		return "", fmt.Errorf("macro[if]: '{' not found")
 	}
-	p.H.WriteCodeBlock(fmt.Sprintf("if %s {", ifStmt))
+	p.Handler().WriteCodeBlock(fmt.Sprintf("if %s {", ifStmt))
 	rest, err = p.ParseSubstring(rest, "◊}")
 	if err != nil {
 		return "", err
@@ -348,7 +359,7 @@ func macroIf(p Parser, s string) (string, error) {
 	for {
 		if hasElseIf.MatchString(rest) || hasElse.MatchString(rest) {
 			ifStmt, rest, _ = strings.Cut(rest, "{")
-			p.H.WriteCodeBlock(fmt.Sprintf("}%s{", ifStmt))
+			p.Handler().WriteCodeBlock(fmt.Sprintf("}%s{", ifStmt))
 			rest, err = p.ParseSubstring(rest, "◊}")
 			if err != nil {
 				return "", err
@@ -357,7 +368,7 @@ func macroIf(p Parser, s string) (string, error) {
 			break
 		}
 	}
-	p.H.WriteCodeBlock("}")
+	p.Handler().WriteCodeBlock("}")
 	return rest, nil
 }
 
@@ -371,11 +382,11 @@ func macroFor(p Parser, s string) (string, error) {
 	if !found {
 		return "", fmt.Errorf("macro[for]: '{' not found")
 	}
-	p.H.WriteCodeBlock(fmt.Sprintf("for %s {", forStmt))
+	p.Handler().WriteCodeBlock(fmt.Sprintf("for %s {", forStmt))
 	rest, err = p.ParseSubstring(rest, "◊}")
 	if err != nil {
 		return "", err
 	}
-	p.H.WriteCodeBlock("}")
+	p.Handler().WriteCodeBlock("}")
 	return rest, nil
 }

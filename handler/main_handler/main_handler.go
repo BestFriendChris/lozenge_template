@@ -1,4 +1,4 @@
-package test_handler
+package main_handler
 
 import (
 	"bytes"
@@ -6,33 +6,32 @@ import (
 	"strings"
 
 	"github.com/BestFriendChris/lozenge/parser"
-	"mvdan.cc/gofumpt/format"
 )
 
-type TestHandler struct {
+type MainHandler struct {
 	Content      []string
 	GlobalCode   []string
 	InlineOutput []string
 }
 
-func (th *TestHandler) DefaultMacros() map[string]parser.Macro {
+func (th *MainHandler) DefaultMacros() map[string]parser.Macro {
 	return nil
 }
 
-func (th *TestHandler) WriteContent(s string) {
+func (th *MainHandler) WriteContent(s string) {
 	th.Content = append(th.Content, s)
 	th.InlineOutput = append(th.InlineOutput, fmt.Sprintf("buf.WriteString(%q)", s))
 }
 
-func (th *TestHandler) WriteCodeInline(s string) {
+func (th *MainHandler) WriteCodeExpression(s string) {
 	th.InlineOutput = append(th.InlineOutput, fmt.Sprintf("buf.WriteString(fmt.Sprintf(%q, %s))", "%v", s))
 }
 
-func (th *TestHandler) WriteCodeBlock(s string) {
+func (th *MainHandler) WriteCodeBlock(s string) {
 	th.InlineOutput = append(th.InlineOutput, s)
 }
 
-func (th *TestHandler) WriteCodeGlobalBlock(s string) {
+func (th *MainHandler) WriteCodeGlobalBlock(s string) {
 	th.GlobalCode = append(th.GlobalCode, s)
 }
 
@@ -52,7 +51,7 @@ fmt.Print(buf.String())
 }`,
 }
 
-func (th *TestHandler) Done(opts format.Options) (string, error) {
+func (th *MainHandler) Done() (string, error) {
 	var fullOutput bytes.Buffer
 
 	fullOutput.WriteString(STATIC[0])
@@ -61,10 +60,5 @@ func (th *TestHandler) Done(opts format.Options) (string, error) {
 	fullOutput.WriteString(strings.Join(th.InlineOutput, "\n"))
 	fullOutput.WriteString(STATIC[2])
 
-	formatted, err := format.Source([]byte(fullOutput.String()), opts)
-	if err != nil {
-		fmt.Printf("unable to format:\n%s\n", fullOutput.String())
-		return "", err
-	}
-	return string(formatted), nil
+	return fullOutput.String(), nil
 }
