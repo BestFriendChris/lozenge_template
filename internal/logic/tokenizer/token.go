@@ -12,10 +12,6 @@ func NewToken(tt TokenType, s string) *Token {
 	return &Token{TT: tt, S: s}
 }
 
-//func NewCustomToken(s string, extra *any) *Token {
-//	return &Token{TT: Custom, S: s, E: extra}
-//}
-
 func (t *Token) String() string {
 	var extra string
 	if t.E != nil {

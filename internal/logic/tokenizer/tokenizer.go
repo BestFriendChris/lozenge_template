@@ -30,29 +30,29 @@ loop:
 		c := runes[i]
 		switch c {
 		case ' ', '\t':
-			if tt == Unknown {
-				tt = WS
+			if tt == TTunknown {
+				tt = TTws
 			}
-			if tt != WS {
+			if tt != TTws {
 				break loop
 			}
 		case '\n':
-			if tt == Unknown {
-				tt = NL
+			if tt == TTunknown {
+				tt = TTnl
 			} else {
 				break loop
 			}
 		case ct.loz:
-			if tt == Unknown {
+			if tt == TTunknown {
 				return ct.parseLozenge(runes[i+1:])
 			} else {
 				break loop
 			}
 		default:
-			if tt == Unknown {
-				tt = Content
+			if tt == TTunknown {
+				tt = TTcontent
 			}
-			if tt != Content {
+			if tt != TTcontent {
 				break loop
 			}
 		}
@@ -61,7 +61,7 @@ loop:
 }
 
 func (ct *ContentTokenizer) lozengeFallback(runes []rune) (*Token, string) {
-	return NewToken(Content, string(ct.loz)), string(runes)
+	return NewToken(TTcontent, string(ct.loz)), string(runes)
 }
 
 func (ct *ContentTokenizer) parseLozenge(runes []rune) (*Token, string) {
@@ -74,7 +74,7 @@ func (ct *ContentTokenizer) parseLozenge(runes []rune) (*Token, string) {
 	case '{':
 		return ct.ParseGoToClosingBrace(runes)
 	case '(':
-		return ct.ParseGoCodeTo(runes, GoCodeExpr, '(', ')', true)
+		return ct.ParseGoCodeTo(runes, TTgoCodeExpr, '(', ')', true)
 	case '.':
 		return ct.parseMacroIdentifier(runes)
 	case '^':
@@ -90,7 +90,7 @@ func (ct *ContentTokenizer) parseLozenge(runes []rune) (*Token, string) {
 		if len(identifier) == 0 {
 			return ct.lozengeFallback(runes)
 		} else {
-			return NewToken(GoCodeExpr, identifier), rest
+			return NewToken(TTgoCodeExpr, identifier), rest
 		}
 	}
 }
@@ -100,16 +100,16 @@ func (ct *ContentTokenizer) parseMacroIdentifier(runes []rune) (*Token, string) 
 	if len(identifier) == 0 {
 		return ct.lozengeFallback(runes)
 	}
-	return NewToken(Macro, identifier), rest
+	return NewToken(TTmacro, identifier), rest
 }
 
 func (ct *ContentTokenizer) ParseGoToClosingBrace(runes []rune) (*Token, string) {
 	var tt TokenType
 	if runes[0] == '^' {
-		tt = GoCodeGlobalBlock
+		tt = TTgoCodeGlobalBlock
 		runes = runes[1:]
 	} else {
-		tt = GoCodeLocalBlock
+		tt = TTgoCodeLocalBlock
 	}
 	return ct.ParseGoCodeTo(runes, tt, '{', '}', false)
 }

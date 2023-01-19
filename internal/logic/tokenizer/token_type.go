@@ -1,41 +1,59 @@
 package tokenizer
 
+import "fmt"
+
 type TokenType int
 
 const (
-	Unknown TokenType = iota
-	WS
-	NL
-	Content
-	GoCodeGlobalBlock
-	GoCodeLocalBlock
-	GoCodeExpr
-	Macro
+	TTunknown TokenType = iota
+	TTws
+	TTnl
+	TTcontent
+	TTgoCodeGlobalBlock
+	TTgoCodeLocalBlock
+	TTgoCodeExpr
+	TTmacro
 
-	Custom = 999
+	TTcustom = 999
+	// Any custom types should be > 999
 )
+
+var a = make(map[TokenType]string)
+var customIdx = TTcustom
+
+func RegisterCustomTokenType(s string) TokenType {
+	customIdx++
+	tt := TokenType(customIdx)
+	a[tt] = `TT.` + s
+	return tt
+}
 
 func (t TokenType) String() string {
 	switch t {
-	case Unknown:
+	case TTunknown:
 		return "TT.Unknown"
-	case WS:
+	case TTws:
 		return "TT.WS"
-	case NL:
+	case TTnl:
 		return "TT.NL"
-	case Content:
+	case TTcontent:
 		return "TT.Content"
-	case GoCodeGlobalBlock:
+	case TTgoCodeGlobalBlock:
 		return "TT.GoCodeGlobalBlock"
-	case GoCodeLocalBlock:
+	case TTgoCodeLocalBlock:
 		return "TT.GoCodeLocalBlock"
-	case GoCodeExpr:
+	case TTgoCodeExpr:
 		return "TT.GoCodeExpr"
-	case Macro:
+	case TTmacro:
 		return "TT.Macro"
-	case Custom:
+	case TTcustom:
 		return "TT.Custom"
 	default:
-		panic("unrecognized TokenType")
+		customTT, found := a[t]
+		if found {
+			return customTT
+		}
+		panic(fmt.Sprintf("unrecognized TokenType with value %d", t))
+
 	}
 }
