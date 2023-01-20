@@ -1,6 +1,8 @@
-package tokenizer
+package token
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Token struct {
 	TT TokenType

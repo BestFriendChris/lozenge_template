@@ -1,36 +1,51 @@
 package tokenizer
 
 import (
-	"github.com/BestFriendChris/go-ic/ic"
+	"strings"
 	"testing"
+
+	"github.com/BestFriendChris/go-ic/ic"
+	"github.com/BestFriendChris/lozenge/internal/logic/macro"
+	"github.com/BestFriendChris/lozenge/internal/logic/token"
 )
 
-func TestContentTokenizer_NextToken(t *testing.T) {
+func TestContentTokenizer_ReadTokensUntil(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
-		rest := `
+		input := `
 Try:
 ◊^{ import "fmt" }
 ◊{ v := 1 }
 v = ◊v ◊
 	  1 + 2 = ◊(1 + 2)
-◊.CustomFoo
 DONE
 `[1:]
-
-		tokens := make([]*Token, 0)
-		var token *Token
-		tokenizer := NewDefault()
-		for {
-			token, rest = tokenizer.NextToken(rest)
-			tokens = append(tokens, token)
-			if rest == "" {
-				break
-			}
-		}
-
 		c := ic.New(t)
+		c.PrintSection("Input")
+		c.Println(input)
+
+		tokenizer := NewDefault(macro.New())
+		tokens, rest := tokenizer.ReadTokensUntil(input, "DONE")
+
+		c.PrintSection("Tokens")
 		c.PT(tokens)
+
+		c.PrintSection("Rest")
+		c.Println(rest)
+
 		c.Expect(`
+			################################################################################
+			# Input
+			################################################################################
+			Try:
+			◊^{ import "fmt" }
+			◊{ v := 1 }
+			v = ◊v ◊
+				  1 + 2 = ◊(1 + 2)
+			DONE
+			
+			################################################################################
+			# Tokens
+			################################################################################
 			   | TT                   | S                  | E |
 			---+----------------------+--------------------+---+
 			 1 | TT.Content           | "Try:"             |   |
@@ -83,13 +98,242 @@ DONE
 			---+----------------------+--------------------+---+
 			25 | TT.NL                | "\n"               |   |
 			---+----------------------+--------------------+---+
-			26 | TT.Macro             | "CustomFoo"        |   |
+			################################################################################
+			# Rest
+			################################################################################
+			DONE
+			
+			`)
+	})
+	t.Run("simple macro", func(t *testing.T) {
+		input := `Hi: ◊.SimpleMacro(1 + 2) DONE`
+		c := ic.New(t)
+		c.PrintSection("Input")
+		c.Println(input)
+
+		tokenizer := NewDefault(mapOfSimpleMacro())
+		tokens, rest := tokenizer.ReadTokensUntil(input, "DONE")
+
+		c.PrintSection("Tokens")
+		c.PT(tokens)
+
+		c.PrintSection("Rest")
+		c.Println(rest)
+
+		c.Expect(`
+			################################################################################
+			# Input
+			################################################################################
+			Hi: ◊.SimpleMacro(1 + 2) DONE
+			################################################################################
+			# Tokens
+			################################################################################
+			   | TT             | S             | E |
+			---+----------------+---------------+---+
+			 1 | TT.Content     | "Hi:"         |   |
+			---+----------------+---------------+---+
+			 2 | TT.WS          | " "           |   |
+			---+----------------+---------------+---+
+			 3 | TT.Macro       | "SimpleMacro" |   |
+			---+----------------+---------------+---+
+			 4 | TT.SimpleMacro | ""            |   |
+			---+----------------+---------------+---+
+			 5 | TT.GoCodeExpr  | "(1 + 2)"     |   |
+			---+----------------+---------------+---+
+			 6 | TT.WS          | " "           |   |
+			---+----------------+---------------+---+
+			################################################################################
+			# Rest
+			################################################################################
+			DONE
+			`)
+	})
+	t.Run("stop at end of stream", func(t *testing.T) {
+		input := `Hi: ◊.SimpleMacro(1 + 2) DONE`
+		c := ic.New(t)
+		c.Println(`ReadTokensUntil(input, "") will read to end of stream`)
+		c.PrintSection("Input")
+		c.Println(input)
+
+		tokenizer := NewDefault(mapOfSimpleMacro())
+		tokens, rest := tokenizer.ReadTokensUntil(input, "")
+
+		c.PrintSection("Tokens")
+		c.PT(tokens)
+
+		c.PrintSection("Rest")
+		c.Println(rest)
+
+		c.Expect(`
+			ReadTokensUntil(input, "") will read to end of stream
+			################################################################################
+			# Input
+			################################################################################
+			Hi: ◊.SimpleMacro(1 + 2) DONE
+			################################################################################
+			# Tokens
+			################################################################################
+			   | TT             | S             | E |
+			---+----------------+---------------+---+
+			 1 | TT.Content     | "Hi:"         |   |
+			---+----------------+---------------+---+
+			 2 | TT.WS          | " "           |   |
+			---+----------------+---------------+---+
+			 3 | TT.Macro       | "SimpleMacro" |   |
+			---+----------------+---------------+---+
+			 4 | TT.SimpleMacro | ""            |   |
+			---+----------------+---------------+---+
+			 5 | TT.GoCodeExpr  | "(1 + 2)"     |   |
+			---+----------------+---------------+---+
+			 6 | TT.WS          | " "           |   |
+			---+----------------+---------------+---+
+			 7 | TT.Content     | "DONE"        |   |
+			---+----------------+---------------+---+
+			################################################################################
+			# Rest
+			################################################################################
+			
+			`)
+	})
+	t.Run("undefined macro", func(t *testing.T) {
+		input := `Hi: ◊.UndefinedMacro(1) DONE`
+		c := ic.New(t)
+		c.PrintSection("Input")
+		c.Println(input)
+
+		tokenizer := NewDefault(macro.New())
+		tokens, rest := tokenizer.ReadTokensUntil(input, "DONE")
+
+		c.PrintSection("Tokens")
+		c.PT(tokens)
+
+		c.PrintSection("Rest")
+		c.Println(rest)
+
+		c.Expect(`
+			################################################################################
+			# Input
+			################################################################################
+			Hi: ◊.UndefinedMacro(1) DONE
+			################################################################################
+			# Tokens
+			################################################################################
+			   | TT         | S                    | E |
+			---+------------+----------------------+---+
+			 1 | TT.Content | "Hi:"                |   |
+			---+------------+----------------------+---+
+			 2 | TT.WS      | " "                  |   |
+			---+------------+----------------------+---+
+			 3 | TT.Content | "◊"                  |   |
+			---+------------+----------------------+---+
+			 4 | TT.Content | ".UndefinedMacro(1)" |   |
+			---+------------+----------------------+---+
+			 5 | TT.WS      | " "                  |   |
+			---+------------+----------------------+---+
+			################################################################################
+			# Rest
+			################################################################################
+			DONE
+			`)
+	})
+}
+
+func TestContentTokenizer_NextToken(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		rest := `
+Try:
+◊^{ import "fmt" }
+◊{ v := 1 }
+v = ◊v ◊
+	  1 + 2 = ◊(1 + 2)
+DONE
+`[1:]
+		c := ic.New(t)
+		c.PrintSection("Input")
+		c.Println(rest)
+
+		tokens := make([]*token.Token, 0)
+		var tok *token.Token
+		tokenizer := NewDefault(macro.New())
+		for {
+			tok, rest = tokenizer.NextToken(rest)
+			tokens = append(tokens, tok)
+			if rest == "" {
+				break
+			}
+		}
+
+		c.PrintSection("Tokens")
+		c.PT(tokens)
+		c.Expect(`
+			################################################################################
+			# Input
+			################################################################################
+			Try:
+			◊^{ import "fmt" }
+			◊{ v := 1 }
+			v = ◊v ◊
+				  1 + 2 = ◊(1 + 2)
+			DONE
+			
+			################################################################################
+			# Tokens
+			################################################################################
+			   | TT                   | S                  | E |
+			---+----------------------+--------------------+---+
+			 1 | TT.Content           | "Try:"             |   |
+			---+----------------------+--------------------+---+
+			 2 | TT.NL                | "\n"               |   |
+			---+----------------------+--------------------+---+
+			 3 | TT.GoCodeGlobalBlock | " import \"fmt\" " |   |
+			---+----------------------+--------------------+---+
+			 4 | TT.NL                | "\n"               |   |
+			---+----------------------+--------------------+---+
+			 5 | TT.GoCodeLocalBlock  | " v := 1 "         |   |
+			---+----------------------+--------------------+---+
+			 6 | TT.NL                | "\n"               |   |
+			---+----------------------+--------------------+---+
+			 7 | TT.Content           | "v"                |   |
+			---+----------------------+--------------------+---+
+			 8 | TT.WS                | " "                |   |
+			---+----------------------+--------------------+---+
+			 9 | TT.Content           | "="                |   |
+			---+----------------------+--------------------+---+
+			10 | TT.WS                | " "                |   |
+			---+----------------------+--------------------+---+
+			11 | TT.GoCodeExpr        | "v"                |   |
+			---+----------------------+--------------------+---+
+			12 | TT.WS                | " "                |   |
+			---+----------------------+--------------------+---+
+			13 | TT.Content           | "◊"                |   |
+			---+----------------------+--------------------+---+
+			14 | TT.NL                | "\n"               |   |
+			---+----------------------+--------------------+---+
+			15 | TT.WS                | "\t  "             |   |
+			---+----------------------+--------------------+---+
+			16 | TT.Content           | "1"                |   |
+			---+----------------------+--------------------+---+
+			17 | TT.WS                | " "                |   |
+			---+----------------------+--------------------+---+
+			18 | TT.Content           | "+"                |   |
+			---+----------------------+--------------------+---+
+			19 | TT.WS                | " "                |   |
+			---+----------------------+--------------------+---+
+			20 | TT.Content           | "2"                |   |
+			---+----------------------+--------------------+---+
+			21 | TT.WS                | " "                |   |
+			---+----------------------+--------------------+---+
+			22 | TT.Content           | "="                |   |
+			---+----------------------+--------------------+---+
+			23 | TT.WS                | " "                |   |
+			---+----------------------+--------------------+---+
+			24 | TT.GoCodeExpr        | "(1 + 2)"          |   |
+			---+----------------------+--------------------+---+
+			25 | TT.NL                | "\n"               |   |
+			---+----------------------+--------------------+---+
+			26 | TT.Content           | "DONE"             |   |
 			---+----------------------+--------------------+---+
 			27 | TT.NL                | "\n"               |   |
-			---+----------------------+--------------------+---+
-			28 | TT.Content           | "DONE"             |   |
-			---+----------------------+--------------------+---+
-			29 | TT.NL                | "\n"               |   |
 			---+----------------------+--------------------+---+
 			`)
 	})
@@ -100,24 +344,39 @@ Try:
 ^{ v := 1 }
 v = ^v ^
 	  1 + 2 = ^(1 + 2)
-^.CustomFoo
 DONE
 `[1:]
+		c := ic.New(t)
+		c.PrintSection("Input")
+		c.Println(rest)
 
-		tokens := make([]*Token, 0)
-		var token *Token
-		tokenizer := New('^')
+		tokens := make([]*token.Token, 0)
+		var tok *token.Token
+		tokenizer := New('^', macro.New())
 		for {
-			token, rest = tokenizer.NextToken(rest)
-			tokens = append(tokens, token)
+			tok, rest = tokenizer.NextToken(rest)
+			tokens = append(tokens, tok)
 			if rest == "" {
 				break
 			}
 		}
 
-		c := ic.New(t)
+		c.PrintSection("Tokens")
 		c.PT(tokens)
 		c.Expect(`
+			################################################################################
+			# Input
+			################################################################################
+			Try:
+			^^{ import "fmt" }
+			^{ v := 1 }
+			v = ^v ^
+				  1 + 2 = ^(1 + 2)
+			DONE
+			
+			################################################################################
+			# Tokens
+			################################################################################
 			   | TT                   | S                  | E |
 			---+----------------------+--------------------+---+
 			 1 | TT.Content           | "Try:"             |   |
@@ -170,21 +429,17 @@ DONE
 			---+----------------------+--------------------+---+
 			25 | TT.NL                | "\n"               |   |
 			---+----------------------+--------------------+---+
-			26 | TT.Macro             | "CustomFoo"        |   |
+			26 | TT.Content           | "DONE"             |   |
 			---+----------------------+--------------------+---+
 			27 | TT.NL                | "\n"               |   |
-			---+----------------------+--------------------+---+
-			28 | TT.Content           | "DONE"             |   |
-			---+----------------------+--------------------+---+
-			29 | TT.NL                | "\n"               |   |
 			---+----------------------+--------------------+---+
 			`)
 	})
 	t.Run("whitespace", func(t *testing.T) {
-		token, rest := readNextToken("\t   hi")
+		tok, rest := readNextToken("\t   hi")
 
 		c := ic.New(t)
-		logToken(c, token)
+		logToken(c, tok)
 		logRest(c, rest)
 		c.Expect(`
 			################################################################################
@@ -200,11 +455,11 @@ DONE
 			`)
 	})
 	t.Run("newline", func(t *testing.T) {
-		token, rest := readNextToken("\n\nfoo")
+		tok, rest := readNextToken("\n\nfoo")
 
 		c := ic.New(t)
 		c.Println("Only read one newline")
-		logToken(c, token)
+		logToken(c, tok)
 		logRest(c, rest)
 		c.Expect(`
 			Only read one newline
@@ -221,10 +476,10 @@ DONE
 			`)
 	})
 	t.Run("content", func(t *testing.T) {
-		token, rest := readNextToken("foo\nbar")
+		tok, rest := readNextToken("foo\nbar")
 
 		c := ic.New(t)
-		logToken(c, token)
+		logToken(c, tok)
 		logRest(c, rest)
 		c.Expect(`
 			################################################################################
@@ -240,10 +495,10 @@ DONE
 			`)
 	})
 	t.Run("◊◊foo", func(t *testing.T) {
-		token, rest := readNextToken(`◊◊foo`)
+		tok, rest := readNextToken(`◊◊foo`)
 
 		c := ic.New(t)
-		logToken(c, token)
+		logToken(c, tok)
 		logRest(c, rest)
 		c.Expect(`
 			################################################################################
@@ -259,10 +514,10 @@ DONE
 			`)
 	})
 	t.Run("◊ bar", func(t *testing.T) {
-		token, rest := readNextToken(`◊ bar`)
+		tok, rest := readNextToken(`◊ bar`)
 
 		c := ic.New(t)
-		logToken(c, token)
+		logToken(c, tok)
 		logRest(c, rest)
 		c.Expect(`
 			################################################################################
@@ -278,10 +533,10 @@ DONE
 			`)
 	})
 	t.Run(`◊\nbar`, func(t *testing.T) {
-		token, rest := readNextToken("◊\nbar")
+		tok, rest := readNextToken("◊\nbar")
 
 		c := ic.New(t)
-		logToken(c, token)
+		logToken(c, tok)
 		logRest(c, rest)
 		c.Expect(`
 			################################################################################
@@ -297,10 +552,10 @@ DONE
 			`)
 	})
 	t.Run(`◊`, func(t *testing.T) {
-		token, rest := readNextToken("◊")
+		tok, rest := readNextToken("◊")
 
 		c := ic.New(t)
-		logToken(c, token)
+		logToken(c, tok)
 		logRest(c, rest)
 		c.Expect(`
 			################################################################################
@@ -316,10 +571,10 @@ DONE
 			`)
 	})
 	t.Run("◊foo bar", func(t *testing.T) {
-		token, rest := readNextToken(`◊foo bar`)
+		tok, rest := readNextToken(`◊foo bar`)
 
 		c := ic.New(t)
-		logToken(c, token)
+		logToken(c, tok)
 		logRest(c, rest)
 		c.Expect(`
 			################################################################################
@@ -335,10 +590,10 @@ DONE
 			`)
 	})
 	t.Run("◊foo", func(t *testing.T) {
-		token, rest := readNextToken(`◊foo`)
+		tok, rest := readNextToken(`◊foo`)
 
 		c := ic.New(t)
-		logToken(c, token)
+		logToken(c, tok)
 		logRest(c, rest)
 		c.Expect(`
 			################################################################################
@@ -354,10 +609,10 @@ DONE
 			`)
 	})
 	t.Run("◊(1 + 2)foo", func(t *testing.T) {
-		token, rest := readNextToken(`◊(1 + 2)foo`)
+		tok, rest := readNextToken(`◊(1 + 2)foo`)
 
 		c := ic.New(t)
-		logToken(c, token)
+		logToken(c, tok)
 		logRest(c, rest)
 		c.Expect(`
 			################################################################################
@@ -373,10 +628,10 @@ DONE
 			`)
 	})
 	t.Run("◊(1 + 2", func(t *testing.T) {
-		token, rest := readNextToken(`◊(1 + 2`)
+		tok, rest := readNextToken(`◊(1 + 2`)
 
 		c := ic.New(t)
-		logToken(c, token)
+		logToken(c, tok)
 		logRest(c, rest)
 		c.Expect(`
 			################################################################################
@@ -392,17 +647,17 @@ DONE
 			`)
 	})
 	t.Run("◊{ GOCODE }", func(t *testing.T) {
-		token, rest := readNextToken("◊{ var foo struct{a string}{\"}\\\"\"} }foo")
+		tok, rest := readNextToken(`◊{ var foo, bar, baz := struct{a string}{"}\""}, '}', '\'' }foo`)
 
 		c := ic.New(t)
-		logToken(c, token)
+		logToken(c, tok)
 		logRest(c, rest)
 		c.Expect(`
 			################################################################################
 			# token
 			################################################################################
 			Token.TT: TT.GoCodeLocalBlock
-			Token.S: " var foo struct{a string}{\"}\\\"\"} "
+			Token.S: " var foo, bar, baz := struct{a string}{\"}\\\"\"}, '}', '\\'' "
 			Token.E: 
 			################################################################################
 			# rest
@@ -411,10 +666,10 @@ DONE
 			`)
 	})
 	t.Run("◊{ GOCODE ", func(t *testing.T) {
-		token, rest := readNextToken(`◊{ var foo struct{a string}{"}"} foo`)
+		tok, rest := readNextToken(`◊{ var foo struct{a string}{"}"} foo`)
 
 		c := ic.New(t)
-		logToken(c, token)
+		logToken(c, tok)
 		logRest(c, rest)
 		c.Expect(`
 			################################################################################
@@ -430,7 +685,7 @@ DONE
 			`)
 	})
 	t.Run("◊^{ GOCODE }", func(t *testing.T) {
-		token, rest := readNextToken(`
+		tok, rest := readNextToken(`
 ◊^{
 	type foo struct{
 		a string
@@ -438,7 +693,7 @@ DONE
 }foo`[1:])
 
 		c := ic.New(t)
-		logToken(c, token)
+		logToken(c, tok)
 		logRest(c, rest)
 		c.Expect(`
 			################################################################################
@@ -454,7 +709,7 @@ DONE
 			`)
 	})
 	t.Run("◊^{ GOCODE ", func(t *testing.T) {
-		token, rest := readNextToken(`
+		tok, rest := readNextToken(`
 ◊^{
 	type foo struct{
 		a string
@@ -462,7 +717,7 @@ DONE
 foo`[1:])
 
 		c := ic.New(t)
-		logToken(c, token)
+		logToken(c, tok)
 		logRest(c, rest)
 		c.Expect(`
 			################################################################################
@@ -478,10 +733,10 @@ foo`[1:])
 			`)
 	})
 	t.Run("◊^foo", func(t *testing.T) {
-		token, rest := readNextToken(`◊^foo`)
+		tok, rest := readNextToken(`◊^foo`)
 
 		c := ic.New(t)
-		logToken(c, token)
+		logToken(c, tok)
 		logRest(c, rest)
 		c.Expect(`
 			################################################################################
@@ -497,10 +752,10 @@ foo`[1:])
 			`)
 	})
 	t.Run("◊.macro foo", func(t *testing.T) {
-		token, rest := readNextToken(`◊.macro foo`)
+		tok, rest := readNextToken(`◊.macro foo`)
 
 		c := ic.New(t)
-		logToken(c, token)
+		logToken(c, tok)
 		logRest(c, rest)
 		c.Expect(`
 			################################################################################
@@ -512,22 +767,95 @@ foo`[1:])
 			################################################################################
 			# rest
 			################################################################################
-			" foo"
+			"macro foo"
 			`)
 	})
 }
 
-func readNextToken(s string) (*Token, string) {
-	tokenizer := NewDefault()
+func TestContentTokenizer_NextTokenGoCodeUntilOpenBrace(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		tokenizer := NewDefault(macro.New())
+		tok, rest := tokenizer.NextTokenGoCodeUntilOpenBraceLoz(`if strings.DeepEqual(v, []string{"\"", "{"}) {◊foo`)
+		c := ic.New(t)
+		logToken(c, tok)
+		logRest(c, rest)
+		c.Expect(`
+			################################################################################
+			# token
+			################################################################################
+			Token.TT: TT.GoCodeLocalBlock
+			Token.S: "if strings.DeepEqual(v, []string{\"\\\"\", \"{\"}) {"
+			Token.E: 
+			################################################################################
+			# rest
+			################################################################################
+			"foo"
+			`)
+	})
+	t.Run("no open brace", func(t *testing.T) {
+		tokenizer := NewDefault(macro.New())
+		tok, rest := tokenizer.NextTokenGoCodeUntilOpenBraceLoz(`if "\"" == "{" ◊} else { foo ◊}`)
+		c := ic.New(t)
+		logToken(c, tok)
+		logRest(c, rest)
+		c.Expect(`
+			################################################################################
+			# token
+			################################################################################
+			<null>
+			################################################################################
+			# rest
+			################################################################################
+			"if \"\\\"\" == \"{\" ◊} else { foo ◊}"
+			`)
+	})
+}
+
+func readNextToken(s string) (*token.Token, string) {
+	tokenizer := NewDefault(macro.New())
 	return tokenizer.NextToken(s)
 }
 
-func logToken(c *ic.IC, t *Token) {
+func logToken(c *ic.IC, t *token.Token) {
 	c.PrintSection("token")
-	c.PV(t)
+	if t == nil {
+		c.Println("<null>")
+	} else {
+		c.PV(t)
+	}
 }
 
 func logRest(c *ic.IC, rest string) {
 	c.PrintSection("rest")
 	c.Printf("%q\n", rest)
+}
+
+const simpleMacroName = "SimpleMacro"
+
+func mapOfSimpleMacro() macro.MapMacros {
+	return macro.MapMacros{
+		simpleMacroName: &simpleMacro{},
+	}
+}
+
+// ◊.SimpleMacro(1 + 2)
+type simpleMacro struct {
+	ct *ContentTokenizer
+}
+
+var TTsimpleMacro = token.RegisterCustomTokenType("SimpleMacro")
+
+func (m simpleMacro) NextTokens(rest string) ([]*token.Token, string) {
+	tokens := []*token.Token{
+		token.NewToken(TTsimpleMacro, ""),
+	}
+
+	rest = strings.TrimPrefix(rest, simpleMacroName)
+
+	runes := []rune(rest)
+	var tok *token.Token
+	tok, rest = m.ct.ParseGoCodeFromTo(runes, token.TTgoCodeExpr, '(', ')', true)
+	tokens = append(tokens, tok)
+
+	return tokens, rest
 }
