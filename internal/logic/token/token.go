@@ -15,11 +15,16 @@ func NewToken(tt TokenType, s string) *Token {
 }
 
 func (t *Token) String() string {
-	var extra string
+	var str, extra string
+	if t.S != "" {
+		str = fmt.Sprintf("(%q)", t.S)
+	}
 	if t.E != nil {
 		if stringer, ok := (*t.E).(fmt.Stringer); ok {
-			extra = stringer.String()
+			extra = fmt.Sprintf("[%s]", stringer.String())
+		} else {
+			extra = fmt.Sprintf("[%#v]", *t.E)
 		}
 	}
-	return fmt.Sprintf("%s(%q)%s", t.TT, t.S, extra)
+	return fmt.Sprintf("%s%s%s", t.TT, str, extra)
 }

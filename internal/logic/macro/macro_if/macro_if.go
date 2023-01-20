@@ -1,7 +1,6 @@
 package macro_if
 
 import (
-	"fmt"
 	"github.com/BestFriendChris/lozenge/internal/logic/token"
 	"github.com/BestFriendChris/lozenge/internal/logic/tokenizer"
 	"regexp"
@@ -87,7 +86,6 @@ func (m *MacroIf) NextTokens(input string) ([]*token.Token, string) {
 
 	tokens = append(tokens, token.NewToken(TTifEnd, ""))
 	tokens = append(tokens, token.NewToken(token.TTgoCodeLocalBlock, "}"))
-	fmt.Printf("END rest: %q\n", rest)
 	rest = strings.TrimPrefix(rest, "}")
 
 	return tokens, rest

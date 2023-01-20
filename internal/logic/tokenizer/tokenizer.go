@@ -1,7 +1,6 @@
 package tokenizer
 
 import (
-	"fmt"
 	"github.com/BestFriendChris/lozenge/internal/logic/token"
 	"strings"
 	"unicode"
@@ -52,8 +51,6 @@ func (ct *ContentTokenizer) ReadTokensUntil(rest, stopAt string) ([]*token.Token
 				runes := []rune(prev)[1:]
 				tok, rest = ct.lozengeFallback(runes)
 				tokens = append(tokens, tok)
-				//rest = string(runes[1:])
-				fmt.Printf("new rest: %q\n", rest)
 				continue
 			}
 		} else {
