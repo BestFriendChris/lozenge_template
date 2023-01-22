@@ -1,23 +1,23 @@
 package tokenizer
 
 import (
-	"github.com/BestFriendChris/lozenge/internal/logic/token"
 	"strings"
 	"unicode"
 
-	"github.com/BestFriendChris/lozenge/internal/logic/macro"
+	"github.com/BestFriendChris/lozenge/interfaces"
+	"github.com/BestFriendChris/lozenge/internal/logic/token"
 )
 
 type ContentTokenizer struct {
 	loz    rune
-	macros macro.MapMacros
+	macros interfaces.MapMacros
 }
 
-func NewDefault(macros macro.MapMacros) *ContentTokenizer {
+func NewDefault(macros interfaces.MapMacros) *ContentTokenizer {
 	return New('◊', macros)
 }
 
-func New(loz rune, macros macro.MapMacros) *ContentTokenizer {
+func New(loz rune, macros interfaces.MapMacros) *ContentTokenizer {
 	return &ContentTokenizer{
 		loz:    loz,
 		macros: macros,
@@ -26,7 +26,7 @@ func New(loz rune, macros macro.MapMacros) *ContentTokenizer {
 
 func (ct *ContentTokenizer) ReadTokensUntil(rest, stopAt string) ([]*token.Token, string) {
 	tokens := make([]*token.Token, 0)
-	var tok *token.Token
+	var toks []*token.Token
 	for {
 		if len(rest) == 0 {
 			break
@@ -35,32 +35,15 @@ func (ct *ContentTokenizer) ReadTokensUntil(rest, stopAt string) ([]*token.Token
 			break
 		}
 
-		prev := rest
-		tok, rest = ct.NextToken(rest)
-		if tok.TT == token.TTmacro {
-			m, found := ct.macros[tok.S]
-			if found {
-				tokens = append(tokens, tok)
-				var nextTokens []*token.Token
-				nextTokens, rest = m.NextTokens(rest)
-				for _, nextToken := range nextTokens {
-					tokens = append(tokens, nextToken)
-				}
-			} else {
-
-				runes := []rune(prev)[1:]
-				tok, rest = ct.lozengeFallback(runes)
-				tokens = append(tokens, tok)
-				continue
-			}
-		} else {
+		toks, rest = ct.NextTokens(rest)
+		for _, tok := range toks {
 			tokens = append(tokens, tok)
 		}
 	}
 	return tokens, rest
 }
 
-func (ct *ContentTokenizer) NextToken(s string) (*token.Token, string) {
+func (ct *ContentTokenizer) NextTokens(s string) ([]*token.Token, string) {
 	var tt token.TokenType
 	var endIdx int
 	runes := []rune(s)
@@ -101,10 +84,10 @@ loop:
 			}
 		}
 	}
-	return token.NewToken(tt, s[:endIdx]), s[endIdx:]
+	return []*token.Token{token.NewToken(tt, s[:endIdx])}, s[endIdx:]
 }
 
-func (ct *ContentTokenizer) NextTokenGoCodeUntilOpenBraceLoz(s string) (*token.Token, string) {
+func (ct *ContentTokenizer) NextTokenCodeUntilOpenBraceLoz(s string) (*token.Token, string) {
 	runes := []rune(s)
 	var endIdx int
 	var inString, inBackQuotes, escapeInQuote bool
@@ -151,7 +134,7 @@ func (ct *ContentTokenizer) NextTokenGoCodeUntilOpenBraceLoz(s string) (*token.T
 	if endIdx == 0 {
 		return nil, s
 	} else {
-		return token.NewToken(token.TTgoCodeLocalBlock, string(runes[:endIdx])), string(runes[endIdx+1:])
+		return token.NewToken(token.TTcodeLocalBlock, string(runes[:endIdx])), string(runes[endIdx+1:])
 	}
 }
 
@@ -159,53 +142,70 @@ func (ct *ContentTokenizer) lozengeFallback(runes []rune) (*token.Token, string)
 	return token.NewToken(token.TTcontent, string(ct.loz)), string(runes)
 }
 
-func (ct *ContentTokenizer) parseLozenge(runes []rune) (*token.Token, string) {
+func (ct *ContentTokenizer) parseLozenge(runes []rune) ([]*token.Token, string) {
+	singletonToks := func(t *token.Token, rest string) ([]*token.Token, string) {
+		return []*token.Token{t}, rest
+	}
 	if len(runes) == 0 {
-		return ct.lozengeFallback(runes)
+		return singletonToks(ct.lozengeFallback(runes))
 	}
 	switch runes[0] {
 	case ' ', '\n':
-		return ct.lozengeFallback(runes)
+		return singletonToks(ct.lozengeFallback(runes))
 	case '{':
-		return ct.ParseGoToClosingBrace(runes)
+		return singletonToks(ct.ParseGoToClosingBrace(runes))
 	case '(':
-		return ct.ParseGoCodeFromTo(runes, token.TTgoCodeExpr, '(', ')', true)
+		return singletonToks(ct.ParseGoCodeFromTo(runes, token.TTcodeLocalExpr, '(', ')', true))
 	case '.':
 		return ct.parseMacroIdentifier(runes)
 	case '^':
 		if runes[1] == '{' {
-			return ct.ParseGoToClosingBrace(runes)
+			return singletonToks(ct.ParseGoToClosingBrace(runes))
 		} else {
-			return ct.lozengeFallback(runes)
+			return singletonToks(ct.lozengeFallback(runes))
 		}
 	case ct.loz:
-		return ct.lozengeFallback(runes[1:])
+		return singletonToks(ct.lozengeFallback(runes[1:]))
 	default:
-		identifier, rest := ct.readGoIdentifier(runes)
+		identifier, rest := ct.readIdentifier(runes)
 		if len(identifier) == 0 {
-			return ct.lozengeFallback(runes)
+			return singletonToks(ct.lozengeFallback(runes))
 		} else {
-			return token.NewToken(token.TTgoCodeExpr, identifier), rest
+			return singletonToks(token.NewToken(token.TTcodeLocalExpr, identifier), rest)
 		}
 	}
 }
 
-func (ct *ContentTokenizer) parseMacroIdentifier(runes []rune) (*token.Token, string) {
+func (ct *ContentTokenizer) parseMacroIdentifier(runes []rune) (tokens []*token.Token, rest string) {
 	runesSkipDot := runes[1:]
-	identifier, _ := ct.readGoIdentifier(runesSkipDot)
+	identifier, _ := ct.readIdentifier(runesSkipDot)
 	if len(identifier) == 0 {
-		return ct.lozengeFallback(runes)
+		tok, s := ct.lozengeFallback(runes)
+		return []*token.Token{tok}, s
 	}
-	return token.NewToken(token.TTmacro, identifier), string(runesSkipDot)
+	m, found := ct.macros[identifier]
+	if found {
+		tokens = []*token.Token{token.NewToken(token.TTmacro, identifier)}
+		var nextTokens []*token.Token
+		nextTokens, rest = m.NextTokens(string(runes[1:]))
+		for _, nextToken := range nextTokens {
+			tokens = append(tokens, nextToken)
+		}
+	} else {
+		var tok *token.Token
+		tok, rest = ct.lozengeFallback(runes)
+		tokens = []*token.Token{tok}
+	}
+	return
 }
 
 func (ct *ContentTokenizer) ParseGoToClosingBrace(runes []rune) (*token.Token, string) {
 	var tt token.TokenType
 	if runes[0] == '^' {
-		tt = token.TTgoCodeGlobalBlock
+		tt = token.TTcodeGlobalBlock
 		runes = runes[1:]
 	} else {
-		tt = token.TTgoCodeLocalBlock
+		tt = token.TTcodeLocalBlock
 	}
 	return ct.ParseGoCodeFromTo(runes, tt, '{', '}', false)
 }
@@ -272,17 +272,17 @@ func (ct *ContentTokenizer) ParseGoCodeFromTo(runes []rune, tt token.TokenType, 
 	return token.NewToken(tt, string(s)), string(rest)
 }
 
-func isGoLetter(r rune) bool {
+func isLetter(r rune) bool {
 	return unicode.IsLetter(r) || r == '_'
 }
 
-func (ct *ContentTokenizer) readGoIdentifier(runes []rune) (string, string) {
-	if !isGoLetter(runes[0]) {
+func (ct *ContentTokenizer) readIdentifier(runes []rune) (string, string) {
+	if !isLetter(runes[0]) {
 		return "", string(runes)
 	}
 	var endIdx int
 	for i, r := range runes {
-		if isGoLetter(r) || unicode.IsNumber(r) {
+		if isLetter(r) || unicode.IsNumber(r) {
 			endIdx = i + 1
 		} else {
 			break

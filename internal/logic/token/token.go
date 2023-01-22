@@ -14,7 +14,11 @@ func NewToken(tt TokenType, s string) *Token {
 	return &Token{TT: tt, S: s}
 }
 
-func (t *Token) String() string {
+func NewTokenMarker(tt TokenType) *Token {
+	return &Token{TT: tt}
+}
+
+func (t Token) String() string {
 	var str, extra string
 	if t.S != "" {
 		str = fmt.Sprintf("(%q)", t.S)

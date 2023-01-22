@@ -9,9 +9,9 @@ const (
 	TTws
 	TTnl
 	TTcontent
-	TTgoCodeGlobalBlock
-	TTgoCodeLocalBlock
-	TTgoCodeExpr
+	TTcodeGlobalBlock
+	TTcodeLocalBlock
+	TTcodeLocalExpr
 	TTmacro
 
 	TTcustom = 999
@@ -38,12 +38,12 @@ func (t TokenType) String() string {
 		return "TT.NL"
 	case TTcontent:
 		return "TT.Content"
-	case TTgoCodeGlobalBlock:
-		return "TT.GoCodeGlobalBlock"
-	case TTgoCodeLocalBlock:
-		return "TT.GoCodeLocalBlock"
-	case TTgoCodeExpr:
-		return "TT.GoCodeExpr"
+	case TTcodeGlobalBlock:
+		return "TT.CodeGlobalBlock"
+	case TTcodeLocalBlock:
+		return "TT.CodeLocalBlock"
+	case TTcodeLocalExpr:
+		return "TT.CodeLocalExpr"
 	case TTmacro:
 		return "TT.Macro"
 	case TTcustom:

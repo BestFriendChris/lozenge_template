@@ -7,13 +7,6 @@ import (
 	"strings"
 )
 
-var (
-	TTifBlock       = token.RegisterCustomTokenType("If.Block")
-	TTifElseIfBlock = token.RegisterCustomTokenType("If.ElseIfBlock")
-	TTifElseBlock   = token.RegisterCustomTokenType("If.ElseBlock")
-	TTifEnd         = token.RegisterCustomTokenType("If.End")
-)
-
 func New(ct *tokenizer.ContentTokenizer) *MacroIf {
 	return &MacroIf{
 		ct: ct,
@@ -31,18 +24,16 @@ var (
 
 func (m *MacroIf) NextTokens(input string) ([]*token.Token, string) {
 	rest := input
-	var tokens, subTokens []*token.Token
-	tokens = []*token.Token{
-		token.NewToken(TTifBlock, ""),
-	}
+	tokens := make([]*token.Token, 0)
 
 	var tok *token.Token
-	tok, rest = m.ct.NextTokenGoCodeUntilOpenBraceLoz(rest)
+	tok, rest = m.ct.NextTokenCodeUntilOpenBraceLoz(rest)
 	if tok == nil {
 		return make([]*token.Token, 0), input
 	}
 	tokens = append(tokens, tok)
 
+	var subTokens []*token.Token
 	subTokens, rest = m.ct.ReadTokensUntil(rest, "◊}")
 	rest = strings.TrimPrefix(rest, "◊")
 	for _, subToken := range subTokens {
@@ -52,8 +43,7 @@ func (m *MacroIf) NextTokens(input string) ([]*token.Token, string) {
 	for {
 		found := elseIfRegex.FindIndex([]byte(rest))
 		if found != nil && found[0] == 0 {
-			tokens = append(tokens, token.NewToken(TTifElseIfBlock, ""))
-			tok, rest = m.ct.NextTokenGoCodeUntilOpenBraceLoz(rest)
+			tok, rest = m.ct.NextTokenCodeUntilOpenBraceLoz(rest)
 			if tok == nil {
 				return make([]*token.Token, 0), input
 			}
@@ -70,8 +60,7 @@ func (m *MacroIf) NextTokens(input string) ([]*token.Token, string) {
 	}
 	found := elseRegex.FindIndex([]byte(rest))
 	if found != nil && found[0] == 0 {
-		tokens = append(tokens, token.NewToken(TTifElseBlock, ""))
-		tok, rest = m.ct.NextTokenGoCodeUntilOpenBraceLoz(rest)
+		tok, rest = m.ct.NextTokenCodeUntilOpenBraceLoz(rest)
 		if tok == nil {
 			return make([]*token.Token, 0), input
 		}
@@ -84,8 +73,8 @@ func (m *MacroIf) NextTokens(input string) ([]*token.Token, string) {
 		}
 	}
 
-	tokens = append(tokens, token.NewToken(TTifEnd, ""))
-	tokens = append(tokens, token.NewToken(token.TTgoCodeLocalBlock, "}"))
+	tokens = append(tokens, token.NewToken(token.TTcodeLocalBlock, "}"))
+
 	rest = strings.TrimPrefix(rest, "}")
 
 	return tokens, rest

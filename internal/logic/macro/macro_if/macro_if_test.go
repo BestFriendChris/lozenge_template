@@ -1,17 +1,17 @@
 package macro_if
 
 import (
-	"reflect"
 	"testing"
 
-	"github.com/BestFriendChris/lozenge/internal/logic/macro"
+	"github.com/BestFriendChris/go-ic/ic"
+	"github.com/BestFriendChris/lozenge/interfaces"
 	"github.com/BestFriendChris/lozenge/internal/logic/token"
 	"github.com/BestFriendChris/lozenge/internal/logic/tokenizer"
 )
 
-func TestMacroIf_NextToken(t *testing.T) {
+func TestMacroIf_NextTokens(t *testing.T) {
 	t.Run("basic if", func(t *testing.T) {
-		ct := tokenizer.NewDefault(macro.New())
+		ct := tokenizer.NewDefault(interfaces.NewMapMacros())
 
 		rest := `
 if reflect.DeepEqual(val, []string{"foo"}) {◊
@@ -23,42 +23,38 @@ if reflect.DeepEqual(val, []string{"foo"}) {◊
 		var tokens []*token.Token
 		tokens, rest = macroIf.NextTokens(rest)
 
-		if rest != "bar" {
-			t.Errorf("\n got: %q\nwant: %q", rest, "bar")
-		}
+		c := ic.New(t)
+		c.PrintSection("tokens")
+		c.PT(tokens)
 
-		tests := []struct {
-			tt token.TokenType
-			ts string
-		}{
-			{TTifBlock, ""},
-			{token.TTgoCodeLocalBlock, "if reflect.DeepEqual(val, []string{\"foo\"}) {"},
-			{token.TTnl, "\n"},
-			{token.TTws, "  "},
-			{token.TTcontent, "hi"},
-			{token.TTnl, "\n"},
-			{TTifEnd, ""},
-			{token.TTgoCodeLocalBlock, "}"},
-		}
-
-		if len(tokens) != len(tests) {
-			wantTokens := make([]*token.Token, len(tests))
-			for i, test := range tests {
-				wantTokens[i] = token.NewToken(test.tt, test.ts)
-			}
-			t.Fatalf("\n got: %v\nwant: %v", tokens, wantTokens)
-		}
-
-		for i, test := range tests {
-			got := tokens[i]
-			want := token.NewToken(test.tt, test.ts)
-			if !reflect.DeepEqual(got, want) {
-				t.Errorf("\n got: %v\nwant: %v", got, want)
-			}
-		}
+		c.PrintSection("rest")
+		c.Println(rest)
+		c.Expect(`
+			################################################################################
+			# tokens
+			################################################################################
+			   | TT                | S                                                | E |
+			---+-------------------+--------------------------------------------------+---+
+			 1 | TT.CodeLocalBlock | "if reflect.DeepEqual(val, []string{\"foo\"}) {" |   |
+			---+-------------------+--------------------------------------------------+---+
+			 2 | TT.NL             | "\n"                                             |   |
+			---+-------------------+--------------------------------------------------+---+
+			 3 | TT.WS             | "  "                                             |   |
+			---+-------------------+--------------------------------------------------+---+
+			 4 | TT.Content        | "hi"                                             |   |
+			---+-------------------+--------------------------------------------------+---+
+			 5 | TT.NL             | "\n"                                             |   |
+			---+-------------------+--------------------------------------------------+---+
+			 6 | TT.CodeLocalBlock | "}"                                              |   |
+			---+-------------------+--------------------------------------------------+---+
+			################################################################################
+			# rest
+			################################################################################
+			bar
+			`)
 	})
 	t.Run("basic if else", func(t *testing.T) {
-		ct := tokenizer.NewDefault(macro.New())
+		ct := tokenizer.NewDefault(interfaces.NewMapMacros())
 
 		rest := `
 if true {◊
@@ -73,51 +69,50 @@ if true {◊
 		var tokens []*token.Token
 		tokens, rest = macroIf.NextTokens(rest)
 
-		if rest != "baz\n" {
-			t.Errorf("\n got: %q\nwant: %q", rest, "baz\n")
-		}
+		c := ic.New(t)
+		c.PrintSection("tokens")
+		c.PT(tokens)
 
-		tests := []struct {
-			tt token.TokenType
-			ts string
-		}{
-			{TTifBlock, ""},
-			{token.TTgoCodeLocalBlock, "if true {"},
-			{token.TTnl, "\n"},
-			{token.TTws, "  "},
-			{token.TTcontent, "foo"},
-			{token.TTnl, "\n"},
-			{TTifElseBlock, ""},
-			{token.TTgoCodeLocalBlock, "}  else  {"},
-			{token.TTnl, "\n"},
-			{token.TTws, "  "},
-			{token.TTcontent, "bar"},
-			{token.TTnl, "\n"},
-			{TTifEnd, ""},
-			{token.TTgoCodeLocalBlock, "}"},
-		}
+		c.PrintSection("rest")
+		c.Println(rest)
 
-		wantTokens := make([]*token.Token, len(tests))
-		for i, test := range tests {
-			wantTokens[i] = token.NewToken(test.tt, test.ts)
-		}
-		if len(tokens) != len(tests) {
-			t.Fatalf("\n got: %v\nwant: %v", tokens, wantTokens)
-		}
-
-		for i, test := range tests {
-			got := tokens[i]
-			want := token.NewToken(test.tt, test.ts)
-			if !reflect.DeepEqual(got, want) {
-				t.Errorf("\n got: %v\nwant: %v", got, want)
-			}
-		}
-		if t.Failed() {
-			t.Fatalf("\n got: %v\nwant: %v", tokens, wantTokens)
-		}
+		c.Expect(`
+			################################################################################
+			# tokens
+			################################################################################
+			   | TT                | S            | E |
+			---+-------------------+--------------+---+
+			 1 | TT.CodeLocalBlock | "if true {"  |   |
+			---+-------------------+--------------+---+
+			 2 | TT.NL             | "\n"         |   |
+			---+-------------------+--------------+---+
+			 3 | TT.WS             | "  "         |   |
+			---+-------------------+--------------+---+
+			 4 | TT.Content        | "foo"        |   |
+			---+-------------------+--------------+---+
+			 5 | TT.NL             | "\n"         |   |
+			---+-------------------+--------------+---+
+			 6 | TT.CodeLocalBlock | "}  else  {" |   |
+			---+-------------------+--------------+---+
+			 7 | TT.NL             | "\n"         |   |
+			---+-------------------+--------------+---+
+			 8 | TT.WS             | "  "         |   |
+			---+-------------------+--------------+---+
+			 9 | TT.Content        | "bar"        |   |
+			---+-------------------+--------------+---+
+			10 | TT.NL             | "\n"         |   |
+			---+-------------------+--------------+---+
+			11 | TT.CodeLocalBlock | "}"          |   |
+			---+-------------------+--------------+---+
+			################################################################################
+			# rest
+			################################################################################
+			baz
+			
+			`)
 	})
 	t.Run("basic if else if", func(t *testing.T) {
-		ct := tokenizer.NewDefault(macro.New())
+		ct := tokenizer.NewDefault(interfaces.NewMapMacros())
 
 		rest := `
 if v == 1 {◊
@@ -136,84 +131,136 @@ if v == 1 {◊
 		var tokens []*token.Token
 		tokens, rest = macroIf.NextTokens(rest)
 
-		if rest != "baz\n" {
-			t.Errorf("\n got: %q\nwant: %q", rest, "baz\n")
-		}
+		c := ic.New(t)
+		c.PrintSection("tokens")
+		c.PT(tokens)
 
-		tests := []struct {
-			tt token.TokenType
-			ts string
-		}{
-			{TTifBlock, ""},
-			{token.TTgoCodeLocalBlock, "if v == 1 {"},
-			{token.TTnl, "\n"},
-			{token.TTws, "  "},
-			{token.TTcontent, "one"},
-			{token.TTnl, "\n"},
-			{TTifElseIfBlock, ""},
-			{token.TTgoCodeLocalBlock, "}  else  if v == 2 {"},
-			{token.TTnl, "\n"},
-			{token.TTws, "  "},
-			{token.TTcontent, "two"},
-			{token.TTnl, "\n"},
-			{TTifElseIfBlock, ""},
-			{token.TTgoCodeLocalBlock, "}  else  if  v == 3 {"},
-			{token.TTnl, "\n"},
-			{token.TTws, "  "},
-			{token.TTcontent, "three"},
-			{token.TTnl, "\n"},
-			{TTifElseBlock, ""},
-			{token.TTgoCodeLocalBlock, "}  else {"},
-			{token.TTnl, "\n"},
-			{token.TTws, "  "},
-			{token.TTcontent, "four"},
-			{token.TTnl, "\n"},
-			{TTifEnd, ""},
-			{token.TTgoCodeLocalBlock, "}"},
-		}
+		c.PrintSection("rest")
+		c.Println(rest)
 
-		wantTokens := make([]*token.Token, len(tests))
-		for i, test := range tests {
-			wantTokens[i] = token.NewToken(test.tt, test.ts)
-		}
-		if len(tokens) != len(tests) {
-			t.Fatalf("\n got: %v\nwant: %v", tokens, wantTokens)
-		}
-
-		for i, test := range tests {
-			got := tokens[i]
-			want := token.NewToken(test.tt, test.ts)
-			if !reflect.DeepEqual(got, want) {
-				t.Errorf("\n got: %v\nwant: %v", got, want)
-			}
-		}
-		if t.Failed() {
-			t.Fatalf("\n got: %v\nwant: %v", tokens, wantTokens)
-		}
+		c.Expect(`
+			################################################################################
+			# tokens
+			################################################################################
+			   | TT                | S                       | E |
+			---+-------------------+-------------------------+---+
+			 1 | TT.CodeLocalBlock | "if v == 1 {"           |   |
+			---+-------------------+-------------------------+---+
+			 2 | TT.NL             | "\n"                    |   |
+			---+-------------------+-------------------------+---+
+			 3 | TT.WS             | "  "                    |   |
+			---+-------------------+-------------------------+---+
+			 4 | TT.Content        | "one"                   |   |
+			---+-------------------+-------------------------+---+
+			 5 | TT.NL             | "\n"                    |   |
+			---+-------------------+-------------------------+---+
+			 6 | TT.CodeLocalBlock | "}  else  if v == 2 {"  |   |
+			---+-------------------+-------------------------+---+
+			 7 | TT.NL             | "\n"                    |   |
+			---+-------------------+-------------------------+---+
+			 8 | TT.WS             | "  "                    |   |
+			---+-------------------+-------------------------+---+
+			 9 | TT.Content        | "two"                   |   |
+			---+-------------------+-------------------------+---+
+			10 | TT.NL             | "\n"                    |   |
+			---+-------------------+-------------------------+---+
+			11 | TT.CodeLocalBlock | "}  else  if  v == 3 {" |   |
+			---+-------------------+-------------------------+---+
+			12 | TT.NL             | "\n"                    |   |
+			---+-------------------+-------------------------+---+
+			13 | TT.WS             | "  "                    |   |
+			---+-------------------+-------------------------+---+
+			14 | TT.Content        | "three"                 |   |
+			---+-------------------+-------------------------+---+
+			15 | TT.NL             | "\n"                    |   |
+			---+-------------------+-------------------------+---+
+			16 | TT.CodeLocalBlock | "}  else {"             |   |
+			---+-------------------+-------------------------+---+
+			17 | TT.NL             | "\n"                    |   |
+			---+-------------------+-------------------------+---+
+			18 | TT.WS             | "  "                    |   |
+			---+-------------------+-------------------------+---+
+			19 | TT.Content        | "four"                  |   |
+			---+-------------------+-------------------------+---+
+			20 | TT.NL             | "\n"                    |   |
+			---+-------------------+-------------------------+---+
+			21 | TT.CodeLocalBlock | "}"                     |   |
+			---+-------------------+-------------------------+---+
+			################################################################################
+			# rest
+			################################################################################
+			baz
+			
+			`)
 	})
 }
 
-func TestMacroIf_NextToken_errorCases(t *testing.T) {
-	tests := []struct {
-		Name, input string
-	}{
-		{
-			"no closing brace with if",
-			`if true `,
-		},
-		{
-			"no closing brace with else",
-			`
+func TestMacroIf_NextTokens_errorCases(t *testing.T) {
+	t.Run("no closing brace with if", func(t *testing.T) {
+		input := `if true `
+		ct := tokenizer.NewDefault(interfaces.NewMapMacros())
+		macroIf := New(ct)
+
+		tokens, rest := macroIf.NextTokens(input)
+
+		c := ic.New(t)
+		c.PrintSection("tokens")
+		c.PT(tokens)
+
+		c.PrintSection("rest")
+		c.Println(rest)
+
+		c.Expect(`
+			################################################################################
+			# tokens
+			################################################################################
+			   | TT | S | E |
+			---+----+---+---+
+			################################################################################
+			# rest
+			################################################################################
+			if true 
+			`)
+	})
+	t.Run("no closing brace with else", func(t *testing.T) {
+		input := `
 if v == 1 {◊
   one
 ◊}  else 
   four
 ◊}baz
-`[1:],
-		},
-		{
-			"no closing brace with else if",
-			`
+`[1:]
+		ct := tokenizer.NewDefault(interfaces.NewMapMacros())
+		macroIf := New(ct)
+
+		tokens, rest := macroIf.NextTokens(input)
+
+		c := ic.New(t)
+		c.PrintSection("tokens")
+		c.PT(tokens)
+
+		c.PrintSection("rest")
+		c.Println(rest)
+
+		c.Expect(`
+			################################################################################
+			# tokens
+			################################################################################
+			   | TT | S | E |
+			---+----+---+---+
+			################################################################################
+			# rest
+			################################################################################
+			if v == 1 {◊
+			  one
+			◊}  else 
+			  four
+			◊}baz
+			
+			`)
+	})
+	t.Run("no closing brace with else if", func(t *testing.T) {
+		input := `
 if v == 1 {◊
   one
 ◊}  else  if v == 2 {◊
@@ -223,24 +270,38 @@ if v == 1 {◊
 ◊}  else {◊
   four
 ◊}baz
-`[1:],
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.Name, func(t *testing.T) {
-			ct := tokenizer.NewDefault(macro.New())
-			macroIf := New(ct)
+`[1:]
+		ct := tokenizer.NewDefault(interfaces.NewMapMacros())
+		macroIf := New(ct)
 
-			tokens, rest := macroIf.NextTokens(test.input)
+		tokens, rest := macroIf.NextTokens(input)
 
-			if len(tokens) != 0 {
-				t.Fatalf("got %d tokens, want 0\ntokens: %v", len(tokens), tokens)
-			}
+		c := ic.New(t)
+		c.PrintSection("tokens")
+		c.PT(tokens)
 
-			want := test.input
-			if rest != want {
-				t.Errorf("\n got: %q\nwant: %q", rest, want)
-			}
-		})
-	}
+		c.PrintSection("rest")
+		c.Println(rest)
+
+		c.Expect(`
+			################################################################################
+			# tokens
+			################################################################################
+			   | TT | S | E |
+			---+----+---+---+
+			################################################################################
+			# rest
+			################################################################################
+			if v == 1 {◊
+			  one
+			◊}  else  if v == 2 {◊
+			  two
+			◊}  else  if  v == 3 
+			  three
+			◊}  else {◊
+			  four
+			◊}baz
+			
+			`)
+	})
 }

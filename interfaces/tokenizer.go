@@ -1,7 +1,7 @@
-package tokenizer
+package interfaces
 
 import "github.com/BestFriendChris/lozenge/internal/logic/token"
 
 type Tokenizer interface {
-	NextToken(s string) (token.Token, string)
+	NextTokens(input string) (toks []*token.Token, rest string)
 }

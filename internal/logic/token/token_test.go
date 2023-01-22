@@ -1,33 +1,49 @@
 package token
 
-import "testing"
+import (
+	"testing"
 
-func TestToken_String(t1 *testing.T) {
-	type fields struct {
-		TT TokenType
-		S  string
-		E  *any
-	}
+	"github.com/BestFriendChris/go-ic/ic"
+)
+
+func TestToken_String(t *testing.T) {
+	c := ic.New(t)
+
 	var data any = "extra-data"
-	tests := []struct {
-		name   string
-		fields fields
-		want   string
+	c.PT([]struct {
+		Name string
+		Tok  *Token
 	}{
-		{"with S no E", fields{TTnl, "\n", nil}, `TT.NL("\n")`},
-		{"no S no E", fields{TTcustom, "", nil}, `TT.Custom`},
-		{"no S with E", fields{TTcustom, "", &data}, `TT.Custom["extra-data"]`},
-	}
-	for _, tt := range tests {
-		t1.Run(tt.name, func(t1 *testing.T) {
-			t := &Token{
-				TT: tt.fields.TT,
-				S:  tt.fields.S,
-				E:  tt.fields.E,
-			}
-			if got := t.String(); got != tt.want {
-				t1.Errorf("\n got: `%s`\nwant: `%s`", got, tt.want)
-			}
-		})
-	}
+		{"with S no E", &Token{TTnl, "\n", nil}},
+		{"no S no E", &Token{TTcustom, "", nil}},
+		{"with S with E", &Token{TTcustom, "foo", &data}},
+		{"no S with E", &Token{TTcustom, "", &data}},
+	})
+
+	c.Expect(`
+		   | Name            | Tok                            |
+		---+-----------------+--------------------------------+
+		 1 | "with S no E"   | TT.NL("\n")                    |
+		---+-----------------+--------------------------------+
+		 2 | "no S no E"     | TT.Custom                      |
+		---+-----------------+--------------------------------+
+		 3 | "with S with E" | TT.Custom("foo")["extra-data"] |
+		---+-----------------+--------------------------------+
+		 4 | "no S with E"   | TT.Custom["extra-data"]        |
+		---+-----------------+--------------------------------+
+		`)
+}
+
+func TestNewTokenMarker(t *testing.T) {
+	c := ic.New(t)
+	c.PrintSection("NewTokenMarker has empty .S field")
+	c.PV(NewTokenMarker(TTcustom))
+	c.Expect(`
+		################################################################################
+		# NewTokenMarker has empty .S field
+		################################################################################
+		Token.TT: TT.Custom
+		Token.S: ""
+		Token.E: 
+		`)
 }
