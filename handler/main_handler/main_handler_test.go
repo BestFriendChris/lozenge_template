@@ -1,6 +1,7 @@
 package main_handler
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -10,8 +11,8 @@ import (
 
 func Test_WriteContent(t *testing.T) {
 	th := MainHandler{}
-	th.WriteContent("foo")
-	th.WriteContent("bar")
+	th.WriteTextContent("foo")
+	th.WriteTextContent("bar")
 
 	{
 		got := th.Content
@@ -33,8 +34,8 @@ buf.WriteString("bar")`[1:])
 
 func Test_WriteCodeExpression(t *testing.T) {
 	th := MainHandler{}
-	th.WriteCodeExpression("foo")
-	th.WriteCodeExpression("bar")
+	th.WriteCodeLocalExpression("foo")
+	th.WriteCodeLocalExpression("bar")
 
 	got, _ := th.Done()
 	got = formatCode(t, got)
@@ -46,8 +47,8 @@ buf.WriteString(fmt.Sprintf("%v", bar))`[1:])
 
 func Test_WriteCodeBlock(t *testing.T) {
 	th := MainHandler{}
-	th.WriteCodeBlock("foo := 1")
-	th.WriteCodeBlock("bar := 2")
+	th.WriteCodeLocalBlock("foo := 1")
+	th.WriteCodeLocalBlock("bar := 2")
 
 	got, _ := th.Done()
 	got = formatCode(t, got)
@@ -74,8 +75,7 @@ var bar = 2`[1:],
 }
 
 func wantFormatted(t *testing.T, global, inline string) string {
-	s := STATIC[0] + global + STATIC[1] + inline + STATIC[2]
-
+	s := fmt.Sprintf(format, global, inline)
 	return formatCode(t, s)
 }
 

@@ -18,13 +18,13 @@ const (
 	// Any custom types should be > 999
 )
 
-var a = make(map[TokenType]string)
+var globalCustomTokenTypeStringRegistry = make(map[TokenType]string)
 var customIdx = TTcustom
 
 func RegisterCustomTokenType(s string) TokenType {
 	customIdx++
 	tt := TokenType(customIdx)
-	a[tt] = `TT.` + s
+	globalCustomTokenTypeStringRegistry[tt] = `TT.` + s
 	return tt
 }
 
@@ -49,11 +49,15 @@ func (t TokenType) String() string {
 	case TTcustom:
 		return "TT.Custom"
 	default:
-		customTT, found := a[t]
+		customTT, found := globalCustomTokenTypeStringRegistry[t]
 		if found {
 			return customTT
 		}
 		panic(fmt.Sprintf("unrecognized TokenType with value %d", t))
 
 	}
+}
+
+func (t TokenType) IsCustom() bool {
+	return t >= TTcustom
 }

@@ -1,11 +1,10 @@
 package main_handler
 
 import (
-	"bytes"
 	"fmt"
 	"strings"
 
-	"github.com/BestFriendChris/lozenge/parser"
+	"github.com/BestFriendChris/lozenge/interfaces"
 )
 
 type MainHandler struct {
@@ -14,20 +13,20 @@ type MainHandler struct {
 	InlineOutput []string
 }
 
-func (th *MainHandler) DefaultMacros() map[string]parser.Macro {
+func (th *MainHandler) DefaultMacros() *interfaces.Macros {
 	return nil
 }
 
-func (th *MainHandler) WriteContent(s string) {
+func (th *MainHandler) WriteTextContent(s string) {
 	th.Content = append(th.Content, s)
 	th.InlineOutput = append(th.InlineOutput, fmt.Sprintf("buf.WriteString(%q)", s))
 }
 
-func (th *MainHandler) WriteCodeExpression(s string) {
+func (th *MainHandler) WriteCodeLocalExpression(s string) {
 	th.InlineOutput = append(th.InlineOutput, fmt.Sprintf("buf.WriteString(fmt.Sprintf(%q, %s))", "%v", s))
 }
 
-func (th *MainHandler) WriteCodeBlock(s string) {
+func (th *MainHandler) WriteCodeLocalBlock(s string) {
 	th.InlineOutput = append(th.InlineOutput, s)
 }
 
@@ -35,30 +34,22 @@ func (th *MainHandler) WriteCodeGlobalBlock(s string) {
 	th.GlobalCode = append(th.GlobalCode, s)
 }
 
-var STATIC = []string{
-	`package main
+var format = `
+package main
 import "bytes"
 import "fmt"
-`,
-
-	`
+%s
 func main() {
 	buf := new(bytes.Buffer)
-`,
-
-	`
-fmt.Print(buf.String())
-}`,
+%s
+	fmt.Print(buf.String())
 }
+`[1:]
 
 func (th *MainHandler) Done() (string, error) {
-	var fullOutput bytes.Buffer
-
-	fullOutput.WriteString(STATIC[0])
-	fullOutput.WriteString(strings.Join(th.GlobalCode, "\n"))
-	fullOutput.WriteString(STATIC[1])
-	fullOutput.WriteString(strings.Join(th.InlineOutput, "\n"))
-	fullOutput.WriteString(STATIC[2])
-
-	return fullOutput.String(), nil
+	return fmt.Sprintf(
+		format,
+		strings.Join(th.GlobalCode, "\n"),
+		strings.Join(th.InlineOutput, "\n"),
+	), nil
 }

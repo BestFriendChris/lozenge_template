@@ -5,5 +5,5 @@ import (
 )
 
 type Parser interface {
-	Parse(TemplateHandler, []*token.Token) (rest []*token.Token, err error)
+	Parse(h TemplateHandler, toks []*token.Token) (rest []*token.Token, err error)
 }

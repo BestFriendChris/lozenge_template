@@ -7,6 +7,7 @@ import (
 
 	"github.com/BestFriendChris/go-ic/ic"
 	"github.com/BestFriendChris/lozenge/interfaces"
+	"github.com/BestFriendChris/lozenge/internal/logic/macro/macro_if"
 	"github.com/BestFriendChris/lozenge/internal/logic/token"
 )
 
@@ -20,7 +21,7 @@ func TestParser_Parse(t *testing.T) {
 			token.NewToken(token.TTcontent, "\n"),
 		}
 		h := &testHandler{}
-		_, _ = New().Parse(h, toks)
+		_, _ = New(nil).Parse(h, toks)
 		s, _ := h.Done()
 
 		c := ic.New(t)
@@ -40,13 +41,52 @@ func TestParser_Parse(t *testing.T) {
 			fmt.Print("\n")
 			`)
 	})
+	t.Run("with macros", func(t *testing.T) {
+		toks := []*token.Token{
+			token.NewToken(token.TTcodeGlobalBlock, `input "fmt"`),
+			token.NewToken(token.TTcodeLocalBlock, "val := 1"),
+			token.NewToken(token.TTmacro, "if"),
+			token.NewToken(token.TTcodeLocalBlock, "if val == 1 {"),
+			token.NewToken(token.TTcontent, "foo = "),
+			token.NewToken(token.TTcodeLocalExpr, "val"),
+			token.NewToken(token.TTcontent, "\n"),
+			token.NewToken(token.TTcodeLocalBlock, "}"),
+		}
+		h := &testHandler{}
+		macros := interfaces.NewMacros()
+		macros.Add(macro_if.New())
+		_, err := New(macros).Parse(h, toks)
+		if err != nil {
+			t.Fatal(err)
+		}
+		s, _ := h.Done()
+
+		c := ic.New(t)
+		c.Print(s)
+		c.Expect(`
+			################################################################################
+			# GLOBAL
+			################################################################################
+			input "fmt"
+			
+			################################################################################
+			# LOCAL
+			################################################################################
+			val := 1
+			if val == 1 {
+			fmt.Print("foo = ")
+			fmt.Printf("%v", val)
+			fmt.Print("\n")
+			}
+			`)
+	})
 }
 
 type testHandler struct {
 	GlobalOutput, LocalOutput strings.Builder
 }
 
-func (h *testHandler) DefaultMacros() interfaces.MapMacros {
+func (h *testHandler) DefaultMacros() *interfaces.Macros {
 	return nil
 }
 

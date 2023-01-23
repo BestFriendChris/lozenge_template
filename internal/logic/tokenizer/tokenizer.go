@@ -10,21 +10,27 @@ import (
 
 type ContentTokenizer struct {
 	loz    rune
-	macros interfaces.MapMacros
+	macros *interfaces.Macros
 }
 
-func NewDefault(macros interfaces.MapMacros) *ContentTokenizer {
+func NewDefault(macros *interfaces.Macros) *ContentTokenizer {
 	return New('◊', macros)
 }
 
-func New(loz rune, macros interfaces.MapMacros) *ContentTokenizer {
+func New(loz rune, macros *interfaces.Macros) *ContentTokenizer {
 	return &ContentTokenizer{
 		loz:    loz,
 		macros: macros,
 	}
 }
 
-func (ct *ContentTokenizer) ReadTokensUntil(rest, stopAt string) ([]*token.Token, string) {
+func (ct *ContentTokenizer) ReadAll(input string) []*token.Token {
+	toks, _ := ct.ReadTokensUntil(input, "")
+	return toks
+}
+
+func (ct *ContentTokenizer) ReadTokensUntil(input, stopAt string) ([]*token.Token, string) {
+	rest := input
 	tokens := make([]*token.Token, 0)
 	var toks []*token.Token
 	for {
@@ -183,11 +189,11 @@ func (ct *ContentTokenizer) parseMacroIdentifier(runes []rune) (tokens []*token.
 		tok, s := ct.lozengeFallback(runes)
 		return []*token.Token{tok}, s
 	}
-	m, found := ct.macros[identifier]
+	m, found := ct.macros.Get(identifier)
 	if found {
 		tokens = []*token.Token{token.NewToken(token.TTmacro, identifier)}
 		var nextTokens []*token.Token
-		nextTokens, rest = m.NextTokens(string(runes[1:]))
+		nextTokens, rest = m.NextTokens(ct, string(runes[1:]))
 		for _, nextToken := range nextTokens {
 			tokens = append(tokens, nextToken)
 		}

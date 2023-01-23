@@ -11,17 +11,17 @@ import (
 
 func TestMacroIf_NextTokens(t *testing.T) {
 	t.Run("basic if", func(t *testing.T) {
-		ct := tokenizer.NewDefault(interfaces.NewMapMacros())
+		ct := tokenizer.NewDefault(interfaces.NewMacros())
 
 		rest := `
 if reflect.DeepEqual(val, []string{"foo"}) {◊
   hi
 ◊}bar`[1:]
 
-		macroIf := New(ct)
+		macroIf := New()
 
 		var tokens []*token.Token
-		tokens, rest = macroIf.NextTokens(rest)
+		tokens, rest = macroIf.NextTokens(ct, rest)
 
 		c := ic.New(t)
 		c.PrintSection("tokens")
@@ -54,7 +54,7 @@ if reflect.DeepEqual(val, []string{"foo"}) {◊
 			`)
 	})
 	t.Run("basic if else", func(t *testing.T) {
-		ct := tokenizer.NewDefault(interfaces.NewMapMacros())
+		ct := tokenizer.NewDefault(interfaces.NewMacros())
 
 		rest := `
 if true {◊
@@ -64,10 +64,10 @@ if true {◊
 ◊}baz
 `[1:]
 
-		macroIf := New(ct)
+		macroIf := New()
 
 		var tokens []*token.Token
-		tokens, rest = macroIf.NextTokens(rest)
+		tokens, rest = macroIf.NextTokens(ct, rest)
 
 		c := ic.New(t)
 		c.PrintSection("tokens")
@@ -112,7 +112,7 @@ if true {◊
 			`)
 	})
 	t.Run("basic if else if", func(t *testing.T) {
-		ct := tokenizer.NewDefault(interfaces.NewMapMacros())
+		ct := tokenizer.NewDefault(interfaces.NewMacros())
 
 		rest := `
 if v == 1 {◊
@@ -126,10 +126,10 @@ if v == 1 {◊
 ◊}baz
 `[1:]
 
-		macroIf := New(ct)
+		macroIf := New()
 
 		var tokens []*token.Token
-		tokens, rest = macroIf.NextTokens(rest)
+		tokens, rest = macroIf.NextTokens(ct, rest)
 
 		c := ic.New(t)
 		c.PrintSection("tokens")
@@ -198,10 +198,10 @@ if v == 1 {◊
 func TestMacroIf_NextTokens_errorCases(t *testing.T) {
 	t.Run("no closing brace with if", func(t *testing.T) {
 		input := `if true `
-		ct := tokenizer.NewDefault(interfaces.NewMapMacros())
-		macroIf := New(ct)
+		ct := tokenizer.NewDefault(interfaces.NewMacros())
+		macroIf := New()
 
-		tokens, rest := macroIf.NextTokens(input)
+		tokens, rest := macroIf.NextTokens(ct, input)
 
 		c := ic.New(t)
 		c.PrintSection("tokens")
@@ -230,10 +230,10 @@ if v == 1 {◊
   four
 ◊}baz
 `[1:]
-		ct := tokenizer.NewDefault(interfaces.NewMapMacros())
-		macroIf := New(ct)
+		ct := tokenizer.NewDefault(interfaces.NewMacros())
+		macroIf := New()
 
-		tokens, rest := macroIf.NextTokens(input)
+		tokens, rest := macroIf.NextTokens(ct, input)
 
 		c := ic.New(t)
 		c.PrintSection("tokens")
@@ -271,10 +271,10 @@ if v == 1 {◊
   four
 ◊}baz
 `[1:]
-		ct := tokenizer.NewDefault(interfaces.NewMapMacros())
-		macroIf := New(ct)
+		ct := tokenizer.NewDefault(interfaces.NewMacros())
+		macroIf := New()
 
-		tokens, rest := macroIf.NextTokens(input)
+		tokens, rest := macroIf.NextTokens(ct, input)
 
 		c := ic.New(t)
 		c.PrintSection("tokens")

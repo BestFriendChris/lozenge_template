@@ -1,7 +1,7 @@
 package interfaces
 
 type TemplateHandler interface {
-	DefaultMacros() MapMacros
+	DefaultMacros() *Macros
 	WriteTextContent(string)
 	WriteCodeGlobalBlock(string)
 	WriteCodeLocalExpression(string)

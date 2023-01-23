@@ -23,7 +23,7 @@ DONE
 		c.PrintSection("Input")
 		c.Println(input)
 
-		tokenizer := NewDefault(interfaces.NewMapMacros())
+		tokenizer := NewDefault(interfaces.NewMacros())
 		tokens, rest := tokenizer.ReadTokensUntil(input, "DONE")
 
 		c.PrintSection("Tokens")
@@ -197,7 +197,7 @@ DONE
 		c.PrintSection("Input")
 		c.Println(input)
 
-		tokenizer := NewDefault(interfaces.NewMapMacros())
+		tokenizer := NewDefault(interfaces.NewMacros())
 		tokens, rest := tokenizer.ReadTokensUntil(input, "DONE")
 
 		c.PrintSection("Tokens")
@@ -250,7 +250,7 @@ DONE
 
 		tokens := make([]*token.Token, 0)
 		var toks []*token.Token
-		tokenizer := NewDefault(interfaces.NewMapMacros())
+		tokenizer := NewDefault(interfaces.NewMacros())
 		for {
 			toks, rest = tokenizer.NextTokens(rest)
 			for _, tok := range toks {
@@ -350,7 +350,7 @@ DONE
 
 		tokens := make([]*token.Token, 0)
 		var toks []*token.Token
-		tokenizer := New('^', interfaces.NewMapMacros())
+		tokenizer := New('^', interfaces.NewMacros())
 		for {
 			toks, rest = tokenizer.NextTokens(rest)
 			for _, tok := range toks {
@@ -778,7 +778,7 @@ foo`[1:])
 
 func TestContentTokenizer_NextTokenCodeUntilOpenBrace(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
-		tokenizer := NewDefault(interfaces.NewMapMacros())
+		tokenizer := NewDefault(interfaces.NewMacros())
 		tok, rest := tokenizer.NextTokenCodeUntilOpenBraceLoz(`if strings.DeepEqual(v, []string{"\"", "{"}) {◊foo`)
 		c := ic.New(t)
 		logToken(c, tok)
@@ -797,7 +797,7 @@ func TestContentTokenizer_NextTokenCodeUntilOpenBrace(t *testing.T) {
 			`)
 	})
 	t.Run("no open brace", func(t *testing.T) {
-		tokenizer := NewDefault(interfaces.NewMapMacros())
+		tokenizer := NewDefault(interfaces.NewMacros())
 		tok, rest := tokenizer.NextTokenCodeUntilOpenBraceLoz(`if "\"" == "{" ◊} else { foo ◊}`)
 		c := ic.New(t)
 		logToken(c, tok)
@@ -843,24 +843,29 @@ func logRest(c *ic.IC, rest string) {
 	c.Printf("%q\n", rest)
 }
 
-const simpleMacroName = "SimpleMacro"
-
-func mapOfSimpleMacro() interfaces.MapMacros {
-	return interfaces.MapMacros{
-		simpleMacroName: &simpleMacro{},
-	}
+func mapOfSimpleMacro() *interfaces.Macros {
+	macros := interfaces.NewMacros()
+	macros.Add(&simpleMacro{})
+	return macros
 }
 
 // ◊.SimpleMacro(1 + 2)
 type simpleMacro struct {
-	ct *ContentTokenizer
 }
 
-func (m simpleMacro) NextTokens(rest string) ([]*token.Token, string) {
-	rest = strings.TrimPrefix(rest, simpleMacroName)
+func (m simpleMacro) Name() string {
+	return "SimpleMacro"
+}
+
+func (m simpleMacro) NextTokens(ct interfaces.ContentTokenizer, rest string) ([]*token.Token, string) {
+	rest = strings.TrimPrefix(rest, m.Name())
 
 	runes := []rune(rest)
 	var tok *token.Token
-	tok, rest = m.ct.ParseGoCodeFromTo(runes, token.TTcodeLocalExpr, '(', ')', true)
+	tok, rest = ct.ParseGoCodeFromTo(runes, token.TTcodeLocalExpr, '(', ')', true)
 	return []*token.Token{tok}, rest
+}
+
+func (m simpleMacro) Parse(_ interfaces.TemplateHandler, toks []*token.Token) (rest []*token.Token, err error) {
+	return toks, nil
 }
