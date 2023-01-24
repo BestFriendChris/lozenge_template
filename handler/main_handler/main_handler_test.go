@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/BestFriendChris/lozenge/internal/infra/go_format"
+	"github.com/BestFriendChris/lozenge_template/internal/infra/go_format"
 	"github.com/andreyvit/diff"
 )
 

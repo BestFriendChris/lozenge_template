@@ -5,8 +5,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/BestFriendChris/lozenge/interfaces"
-	"github.com/BestFriendChris/lozenge/internal/logic/token"
+	"github.com/BestFriendChris/lozenge_template/interfaces"
+	"github.com/BestFriendChris/lozenge_template/internal/logic/token"
 )
 
 type ContentTokenizer struct {

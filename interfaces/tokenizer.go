@@ -1,6 +1,6 @@
 package interfaces
 
-import "github.com/BestFriendChris/lozenge/internal/logic/token"
+import "github.com/BestFriendChris/lozenge_template/internal/logic/token"
 
 type Tokenizer interface {
 	NextTokens(ct ContentTokenizer, input string) (toks []*token.Token, rest string, err error)

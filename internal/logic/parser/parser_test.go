@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/BestFriendChris/go-ic/ic"
-	"github.com/BestFriendChris/lozenge/interfaces"
-	"github.com/BestFriendChris/lozenge/internal/logic/macro/macro_if"
-	"github.com/BestFriendChris/lozenge/internal/logic/token"
+	"github.com/BestFriendChris/lozenge_template/interfaces"
+	"github.com/BestFriendChris/lozenge_template/internal/logic/macro/macro_if"
+	"github.com/BestFriendChris/lozenge_template/internal/logic/token"
 )
 
 func TestParser_Parse(t *testing.T) {

@@ -1,13 +1,13 @@
 package lozenge_template
 
 import (
-	"github.com/BestFriendChris/lozenge/interfaces"
-	"github.com/BestFriendChris/lozenge/internal/infra/go_format"
-	"github.com/BestFriendChris/lozenge/internal/logic/macro/macro_for"
-	"github.com/BestFriendChris/lozenge/internal/logic/macro/macro_if"
-	"github.com/BestFriendChris/lozenge/internal/logic/parser"
-	"github.com/BestFriendChris/lozenge/internal/logic/token"
-	"github.com/BestFriendChris/lozenge/internal/logic/tokenizer"
+	"github.com/BestFriendChris/lozenge_template/interfaces"
+	"github.com/BestFriendChris/lozenge_template/internal/infra/go_format"
+	"github.com/BestFriendChris/lozenge_template/internal/logic/macro/macro_for"
+	"github.com/BestFriendChris/lozenge_template/internal/logic/macro/macro_if"
+	"github.com/BestFriendChris/lozenge_template/internal/logic/parser"
+	"github.com/BestFriendChris/lozenge_template/internal/logic/token"
+	"github.com/BestFriendChris/lozenge_template/internal/logic/tokenizer"
 )
 
 func New(overrideMacros *interfaces.Macros, config ParserConfig) *LozengeTemplate {

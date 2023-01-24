@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/BestFriendChris/lozenge/interfaces"
-	"github.com/BestFriendChris/lozenge/internal/logic/token"
+	"github.com/BestFriendChris/lozenge_template/interfaces"
+	"github.com/BestFriendChris/lozenge_template/internal/logic/token"
 )
 
 func New() *MacroFor {

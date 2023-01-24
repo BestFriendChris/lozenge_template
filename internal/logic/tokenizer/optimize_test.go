@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/BestFriendChris/go-ic/ic"
-	"github.com/BestFriendChris/lozenge/internal/logic/token"
+	"github.com/BestFriendChris/lozenge_template/internal/logic/token"
 )
 
 func TestOptimize_noTrimSpaces(t *testing.T) {

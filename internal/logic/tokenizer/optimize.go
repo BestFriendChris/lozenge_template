@@ -3,7 +3,7 @@ package tokenizer
 import (
 	"fmt"
 
-	"github.com/BestFriendChris/lozenge/internal/logic/token"
+	"github.com/BestFriendChris/lozenge_template/internal/logic/token"
 )
 
 func Optimize(toks []*token.Token, trimSpaces bool) []*token.Token {

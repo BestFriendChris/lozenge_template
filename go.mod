@@ -1,4 +1,4 @@
-module github.com/BestFriendChris/lozenge
+module github.com/BestFriendChris/lozenge_template
 
 go 1.19
 

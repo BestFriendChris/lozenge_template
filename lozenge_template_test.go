@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/BestFriendChris/go-ic/ic"
-	"github.com/BestFriendChris/lozenge/handler/main_handler"
-	"github.com/BestFriendChris/lozenge/interfaces"
-	"github.com/BestFriendChris/lozenge/internal/logic/token"
+	"github.com/BestFriendChris/lozenge_template/handler/main_handler"
+	"github.com/BestFriendChris/lozenge_template/interfaces"
+	"github.com/BestFriendChris/lozenge_template/internal/logic/token"
 )
 
 func TestGenerate(t *testing.T) {

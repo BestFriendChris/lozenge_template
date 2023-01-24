@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/BestFriendChris/go-ic/ic"
-	"github.com/BestFriendChris/lozenge/interfaces"
-	"github.com/BestFriendChris/lozenge/internal/logic/token"
-	"github.com/BestFriendChris/lozenge/internal/logic/tokenizer"
+	"github.com/BestFriendChris/lozenge_template/interfaces"
+	"github.com/BestFriendChris/lozenge_template/internal/logic/token"
+	"github.com/BestFriendChris/lozenge_template/internal/logic/tokenizer"
 )
 
 func TestMacroFor_NextTokens(t *testing.T) {

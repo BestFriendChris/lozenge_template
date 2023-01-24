@@ -1,7 +1,7 @@
 package interfaces
 
 import (
-	"github.com/BestFriendChris/lozenge/internal/logic/token"
+	"github.com/BestFriendChris/lozenge_template/internal/logic/token"
 )
 
 type Parser interface {

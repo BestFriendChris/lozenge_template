@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/BestFriendChris/lozenge/interfaces"
+	"github.com/BestFriendChris/lozenge_template/interfaces"
 )
 
 type MainHandler struct {
