@@ -24,7 +24,7 @@ DONE
 		c.Println(input)
 
 		tokenizer := NewDefault(interfaces.NewMacros())
-		tokens, rest := tokenizer.ReadTokensUntil(input, "DONE")
+		tokens, rest, _ := tokenizer.ReadTokensUntil(input, "DONE")
 
 		c.PrintSection("Tokens")
 		c.PT(tokens)
@@ -112,7 +112,7 @@ DONE
 		c.Println(input)
 
 		tokenizer := NewDefault(mapOfSimpleMacro())
-		tokens, rest := tokenizer.ReadTokensUntil(input, "DONE")
+		tokens, rest, _ := tokenizer.ReadTokensUntil(input, "DONE")
 
 		c.PrintSection("Tokens")
 		c.PT(tokens)
@@ -154,7 +154,7 @@ DONE
 		c.Println(input)
 
 		tokenizer := NewDefault(mapOfSimpleMacro())
-		tokens, rest := tokenizer.ReadTokensUntil(input, "")
+		tokens, rest, _ := tokenizer.ReadTokensUntil(input, "")
 
 		c.PrintSection("Tokens")
 		c.PT(tokens)
@@ -198,13 +198,10 @@ DONE
 		c.Println(input)
 
 		tokenizer := NewDefault(interfaces.NewMacros())
-		tokens, rest := tokenizer.ReadTokensUntil(input, "DONE")
+		_, _, err := tokenizer.ReadTokensUntil(input, "DONE")
 
-		c.PrintSection("Tokens")
-		c.PT(tokens)
-
-		c.PrintSection("Rest")
-		c.Println(rest)
+		c.PrintSection("error")
+		c.Println(err)
 
 		c.Expect(`
 			################################################################################
@@ -212,24 +209,32 @@ DONE
 			################################################################################
 			Hi: ◊.UndefinedMacro(1) DONE
 			################################################################################
-			# Tokens
+			# error
 			################################################################################
-			   | TT         | S                    | E |
-			---+------------+----------------------+---+
-			 1 | TT.Content | "Hi:"                |   |
-			---+------------+----------------------+---+
-			 2 | TT.WS      | " "                  |   |
-			---+------------+----------------------+---+
-			 3 | TT.Content | "◊"                  |   |
-			---+------------+----------------------+---+
-			 4 | TT.Content | ".UndefinedMacro(1)" |   |
-			---+------------+----------------------+---+
-			 5 | TT.WS      | " "                  |   |
-			---+------------+----------------------+---+
+			unknown macro "UndefinedMacro"
+			`)
+	})
+	t.Run("error if stopAt not found", func(t *testing.T) {
+		input := `Hello END`
+		c := ic.New(t)
+		c.PrintSection("Input")
+		c.Println(input)
+
+		tokenizer := NewDefault(interfaces.NewMacros())
+		_, _, err := tokenizer.ReadTokensUntil(input, "WILL_NOT_FIND")
+
+		c.PrintSection("error")
+		c.Println(err)
+
+		c.Expect(`
 			################################################################################
-			# Rest
+			# Input
 			################################################################################
-			DONE
+			Hello END
+			################################################################################
+			# error
+			################################################################################
+			did not find "WILL_NOT_FIND"
 			`)
 	})
 }
@@ -252,7 +257,7 @@ DONE
 		var toks []*token.Token
 		tokenizer := NewDefault(interfaces.NewMacros())
 		for {
-			toks, rest = tokenizer.NextTokens(rest)
+			toks, rest, _ = tokenizer.NextTokens(rest)
 			for _, tok := range toks {
 				tokens = append(tokens, tok)
 			}
@@ -352,7 +357,7 @@ DONE
 		var toks []*token.Token
 		tokenizer := New('^', interfaces.NewMacros())
 		for {
-			toks, rest = tokenizer.NextTokens(rest)
+			toks, rest, _ = tokenizer.NextTokens(rest)
 			for _, tok := range toks {
 				tokens = append(tokens, tok)
 			}
@@ -436,7 +441,7 @@ DONE
 			`)
 	})
 	t.Run("whitespace", func(t *testing.T) {
-		tok, rest := readNextToken(t, "\t   hi")
+		tok, rest, _ := readNextToken(t, "\t   hi")
 
 		c := ic.New(t)
 		logToken(c, tok)
@@ -455,7 +460,7 @@ DONE
 			`)
 	})
 	t.Run("newline", func(t *testing.T) {
-		tok, rest := readNextToken(t, "\n\nfoo")
+		tok, rest, _ := readNextToken(t, "\n\nfoo")
 
 		c := ic.New(t)
 		c.Println("Only read one newline")
@@ -476,7 +481,7 @@ DONE
 			`)
 	})
 	t.Run("content", func(t *testing.T) {
-		tok, rest := readNextToken(t, "foo\nbar")
+		tok, rest, _ := readNextToken(t, "foo\nbar")
 
 		c := ic.New(t)
 		logToken(c, tok)
@@ -495,7 +500,7 @@ DONE
 			`)
 	})
 	t.Run("◊◊foo", func(t *testing.T) {
-		tok, rest := readNextToken(t, `◊◊foo`)
+		tok, rest, _ := readNextToken(t, `◊◊foo`)
 
 		c := ic.New(t)
 		logToken(c, tok)
@@ -514,7 +519,7 @@ DONE
 			`)
 	})
 	t.Run("◊ bar", func(t *testing.T) {
-		tok, rest := readNextToken(t, `◊ bar`)
+		tok, rest, _ := readNextToken(t, `◊ bar`)
 
 		c := ic.New(t)
 		logToken(c, tok)
@@ -533,7 +538,7 @@ DONE
 			`)
 	})
 	t.Run(`◊\nbar`, func(t *testing.T) {
-		tok, rest := readNextToken(t, "◊\nbar")
+		tok, rest, _ := readNextToken(t, "◊\nbar")
 
 		c := ic.New(t)
 		logToken(c, tok)
@@ -552,7 +557,7 @@ DONE
 			`)
 	})
 	t.Run(`◊`, func(t *testing.T) {
-		tok, rest := readNextToken(t, "◊")
+		tok, rest, _ := readNextToken(t, "◊")
 
 		c := ic.New(t)
 		logToken(c, tok)
@@ -571,7 +576,7 @@ DONE
 			`)
 	})
 	t.Run("◊foo bar", func(t *testing.T) {
-		tok, rest := readNextToken(t, `◊foo bar`)
+		tok, rest, _ := readNextToken(t, `◊foo bar`)
 
 		c := ic.New(t)
 		logToken(c, tok)
@@ -590,7 +595,7 @@ DONE
 			`)
 	})
 	t.Run("◊foo", func(t *testing.T) {
-		tok, rest := readNextToken(t, `◊foo`)
+		tok, rest, _ := readNextToken(t, `◊foo`)
 
 		c := ic.New(t)
 		logToken(c, tok)
@@ -609,7 +614,7 @@ DONE
 			`)
 	})
 	t.Run("◊(1 + 2)foo", func(t *testing.T) {
-		tok, rest := readNextToken(t, `◊(1 + 2)foo`)
+		tok, rest, _ := readNextToken(t, `◊(1 + 2)foo`)
 
 		c := ic.New(t)
 		logToken(c, tok)
@@ -628,26 +633,19 @@ DONE
 			`)
 	})
 	t.Run("◊(1 + 2", func(t *testing.T) {
-		tok, rest := readNextToken(t, `◊(1 + 2`)
+		_, _, err := readNextToken(t, `◊(1 + 2`)
 
 		c := ic.New(t)
-		logToken(c, tok)
-		logRest(c, rest)
+		logErr(c, err)
 		c.Expect(`
 			################################################################################
-			# token
+			# error
 			################################################################################
-			Token.TT: TT.Content
-			Token.S: "◊"
-			Token.E: 
-			################################################################################
-			# rest
-			################################################################################
-			"(1 + 2"
+			did not find matched ')'
 			`)
 	})
 	t.Run("◊{ GOCODE }", func(t *testing.T) {
-		tok, rest := readNextToken(t, `◊{ var foo, bar, baz := struct{a string}{"}\""}, '}', '\'' }foo`)
+		tok, rest, _ := readNextToken(t, `◊{ var foo, bar, baz := struct{a string}{"}\""}, '}', '\'' }foo`)
 
 		c := ic.New(t)
 		logToken(c, tok)
@@ -666,26 +664,19 @@ DONE
 			`)
 	})
 	t.Run("◊{ GOCODE ", func(t *testing.T) {
-		tok, rest := readNextToken(t, `◊{ var foo struct{a string}{"}"} foo`)
+		_, _, err := readNextToken(t, `◊{ var foo struct{a string}{"}"} foo`)
 
 		c := ic.New(t)
-		logToken(c, tok)
-		logRest(c, rest)
+		logErr(c, err)
 		c.Expect(`
 			################################################################################
-			# token
+			# error
 			################################################################################
-			Token.TT: TT.Content
-			Token.S: "◊"
-			Token.E: 
-			################################################################################
-			# rest
-			################################################################################
-			"{ var foo struct{a string}{\"}\"} foo"
+			did not find matched '}'
 			`)
 	})
 	t.Run("◊^{ GOCODE }", func(t *testing.T) {
-		tok, rest := readNextToken(t, `
+		tok, rest, _ := readNextToken(t, `
 ◊^{
 	type foo struct{
 		a string
@@ -709,7 +700,7 @@ DONE
 			`)
 	})
 	t.Run("◊^{ GOCODE ", func(t *testing.T) {
-		tok, rest := readNextToken(t, `
+		_, _, err := readNextToken(t, `
 ◊^{
 	type foo struct{
 		a string
@@ -717,23 +708,16 @@ DONE
 foo`[1:])
 
 		c := ic.New(t)
-		logToken(c, tok)
-		logRest(c, rest)
+		logErr(c, err)
 		c.Expect(`
 			################################################################################
-			# token
+			# error
 			################################################################################
-			Token.TT: TT.Content
-			Token.S: "◊"
-			Token.E: 
-			################################################################################
-			# rest
-			################################################################################
-			"{\n\ttype foo struct{\n\t\ta string\n\t}\nfoo"
+			did not find matched '}'
 			`)
 	})
 	t.Run("◊^foo", func(t *testing.T) {
-		tok, rest := readNextToken(t, `◊^foo`)
+		tok, rest, _ := readNextToken(t, `◊^foo`)
 
 		c := ic.New(t)
 		logToken(c, tok)
@@ -753,7 +737,7 @@ foo`[1:])
 	})
 	t.Run("◊.macro", func(t *testing.T) {
 		tokenizer := NewDefault(mapOfSimpleMacro())
-		tokens, rest := tokenizer.NextTokens(`◊.SimpleMacro(1 + 2)`)
+		tokens, rest, _ := tokenizer.NextTokens(`◊.SimpleMacro(1 + 2)`)
 
 		c := ic.New(t)
 		logTokens(c, tokens)
@@ -779,7 +763,7 @@ foo`[1:])
 func TestContentTokenizer_NextTokenCodeUntilOpenBrace(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		tokenizer := NewDefault(interfaces.NewMacros())
-		tok, rest := tokenizer.NextTokenCodeUntilOpenBraceLoz(`if strings.DeepEqual(v, []string{"\"", "{"}) {◊foo`)
+		tok, rest, _ := tokenizer.NextTokenCodeUntilOpenBraceLoz(`if strings.DeepEqual(v, []string{"\"", "{"}) {◊foo`)
 		c := ic.New(t)
 		logToken(c, tok)
 		logRest(c, rest)
@@ -798,34 +782,33 @@ func TestContentTokenizer_NextTokenCodeUntilOpenBrace(t *testing.T) {
 	})
 	t.Run("no open brace", func(t *testing.T) {
 		tokenizer := NewDefault(interfaces.NewMacros())
-		tok, rest := tokenizer.NextTokenCodeUntilOpenBraceLoz(`if "\"" == "{" ◊} else { foo ◊}`)
+		_, _, err := tokenizer.NextTokenCodeUntilOpenBraceLoz(`if "\"" == "{" ◊} else { foo ◊}`)
 		c := ic.New(t)
-		logToken(c, tok)
-		logRest(c, rest)
+		logErr(c, err)
 		c.Expect(`
 			################################################################################
-			# token
+			# error
 			################################################################################
-			<null>
-			################################################################################
-			# rest
-			################################################################################
-			"if \"\\\"\" == \"{\" ◊} else { foo ◊}"
+			no open brace found
 			`)
 	})
 }
 
-func readNextToken(t *testing.T, s string) (*token.Token, string) {
+func readNextToken(t *testing.T, s string) (*token.Token, string, error) {
 	tokenizer := NewDefault(mapOfSimpleMacro())
-	tokens, rest := tokenizer.NextTokens(s)
+	tokens, rest, err := tokenizer.NextTokens(s)
 	if len(tokens) != 1 {
 		t.Fatalf("got len(%d) want len(1): %#v", len(tokens), tokens)
 	}
-	return tokens[0], rest
+	return tokens[0], rest, err
+}
+
+func logErr(c *ic.IC, err error) {
+	c.PrintSection("error")
+	c.Println(err)
 }
 
 func logToken(c *ic.IC, t *token.Token) {
-
 	c.PrintSection("token")
 	if t == nil {
 		c.Println("<null>")
@@ -833,6 +816,7 @@ func logToken(c *ic.IC, t *token.Token) {
 		c.PV(t)
 	}
 }
+
 func logTokens(c *ic.IC, toks []*token.Token) {
 	c.PrintSection("tokens")
 	c.PT(toks)
@@ -857,13 +841,13 @@ func (m simpleMacro) Name() string {
 	return "SimpleMacro"
 }
 
-func (m simpleMacro) NextTokens(ct interfaces.ContentTokenizer, rest string) ([]*token.Token, string) {
+func (m simpleMacro) NextTokens(ct interfaces.ContentTokenizer, rest string) ([]*token.Token, string, error) {
 	rest = strings.TrimPrefix(rest, m.Name())
 
 	runes := []rune(rest)
 	var tok *token.Token
-	tok, rest = ct.ParseGoCodeFromTo(runes, token.TTcodeLocalExpr, '(', ')', true)
-	return []*token.Token{tok}, rest
+	tok, rest, _ = ct.ParseGoCodeFromTo(runes, token.TTcodeLocalExpr, '(', ')', true)
+	return []*token.Token{tok}, rest, nil
 }
 
 func (m simpleMacro) Parse(_ interfaces.TemplateHandler, toks []*token.Token) (rest []*token.Token, err error) {

@@ -1,6 +1,7 @@
 package macro_if
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -24,19 +25,23 @@ func (m *MacroIf) Name() string {
 	return "if"
 }
 
-func (m *MacroIf) NextTokens(ct interfaces.ContentTokenizer, input string) ([]*token.Token, string) {
+func (m *MacroIf) NextTokens(ct interfaces.ContentTokenizer, input string) ([]*token.Token, string, error) {
 	rest := input
 	tokens := make([]*token.Token, 0)
 
 	var tok *token.Token
-	tok, rest = ct.NextTokenCodeUntilOpenBraceLoz(rest)
-	if tok == nil {
-		return make([]*token.Token, 0), input
+	var err error
+	tok, rest, err = ct.NextTokenCodeUntilOpenBraceLoz(rest)
+	if err != nil {
+		return nil, "", fmt.Errorf("macro(if): %w", err)
 	}
 	tokens = append(tokens, tok)
 
 	var subTokens []*token.Token
-	subTokens, rest = ct.ReadTokensUntil(rest, "◊}")
+	subTokens, rest, err = ct.ReadTokensUntil(rest, "◊}")
+	if err != nil {
+		return nil, "", fmt.Errorf("macro(if): %w", err)
+	}
 	rest = strings.TrimPrefix(rest, "◊")
 	for _, subToken := range subTokens {
 		tokens = append(tokens, subToken)
@@ -45,13 +50,16 @@ func (m *MacroIf) NextTokens(ct interfaces.ContentTokenizer, input string) ([]*t
 	for {
 		found := elseIfRegex.FindIndex([]byte(rest))
 		if found != nil && found[0] == 0 {
-			tok, rest = ct.NextTokenCodeUntilOpenBraceLoz(rest)
-			if tok == nil {
-				return make([]*token.Token, 0), input
+			tok, rest, err = ct.NextTokenCodeUntilOpenBraceLoz(rest)
+			if err != nil {
+				return nil, "", fmt.Errorf("macro(if): %w", err)
 			}
 			tokens = append(tokens, tok)
 
-			subTokens, rest = ct.ReadTokensUntil(rest, "◊}")
+			subTokens, rest, err = ct.ReadTokensUntil(rest, "◊}")
+			if err != nil {
+				return nil, "", fmt.Errorf("macro(if): %w", err)
+			}
 			rest = strings.TrimPrefix(rest, "◊")
 			for _, subToken := range subTokens {
 				tokens = append(tokens, subToken)
@@ -62,13 +70,16 @@ func (m *MacroIf) NextTokens(ct interfaces.ContentTokenizer, input string) ([]*t
 	}
 	found := elseRegex.FindIndex([]byte(rest))
 	if found != nil && found[0] == 0 {
-		tok, rest = ct.NextTokenCodeUntilOpenBraceLoz(rest)
-		if tok == nil {
-			return make([]*token.Token, 0), input
+		tok, rest, err = ct.NextTokenCodeUntilOpenBraceLoz(rest)
+		if err != nil {
+			return nil, "", fmt.Errorf("macro(if): %w", err)
 		}
 		tokens = append(tokens, tok)
 
-		subTokens, rest = ct.ReadTokensUntil(rest, "◊}")
+		subTokens, rest, err = ct.ReadTokensUntil(rest, "◊}")
+		if err != nil {
+			return nil, "", fmt.Errorf("macro(if): %w", err)
+		}
 		rest = strings.TrimPrefix(rest, "◊")
 		for _, subToken := range subTokens {
 			tokens = append(tokens, subToken)
@@ -79,7 +90,7 @@ func (m *MacroIf) NextTokens(ct interfaces.ContentTokenizer, input string) ([]*t
 
 	rest = strings.TrimPrefix(rest, "}")
 
-	return tokens, rest
+	return tokens, rest, nil
 }
 
 func (m *MacroIf) Parse(_ interfaces.TemplateHandler, toks []*token.Token) (rest []*token.Token, err error) {

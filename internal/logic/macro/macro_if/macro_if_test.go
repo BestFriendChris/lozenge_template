@@ -21,7 +21,7 @@ if reflect.DeepEqual(val, []string{"foo"}) {◊
 		macroIf := New()
 
 		var tokens []*token.Token
-		tokens, rest = macroIf.NextTokens(ct, rest)
+		tokens, rest, _ = macroIf.NextTokens(ct, rest)
 
 		c := ic.New(t)
 		c.PrintSection("tokens")
@@ -67,7 +67,7 @@ if true {◊
 		macroIf := New()
 
 		var tokens []*token.Token
-		tokens, rest = macroIf.NextTokens(ct, rest)
+		tokens, rest, _ = macroIf.NextTokens(ct, rest)
 
 		c := ic.New(t)
 		c.PrintSection("tokens")
@@ -129,7 +129,7 @@ if v == 1 {◊
 		macroIf := New()
 
 		var tokens []*token.Token
-		tokens, rest = macroIf.NextTokens(ct, rest)
+		tokens, rest, _ = macroIf.NextTokens(ct, rest)
 
 		c := ic.New(t)
 		c.PrintSection("tokens")
@@ -196,33 +196,25 @@ if v == 1 {◊
 }
 
 func TestMacroIf_NextTokens_errorCases(t *testing.T) {
-	t.Run("no closing brace with if", func(t *testing.T) {
+	t.Run("no open brace with if", func(t *testing.T) {
 		input := `if true `
 		ct := tokenizer.NewDefault(interfaces.NewMacros())
 		macroIf := New()
 
-		tokens, rest := macroIf.NextTokens(ct, input)
+		_, _, err := macroIf.NextTokens(ct, input)
 
 		c := ic.New(t)
-		c.PrintSection("tokens")
-		c.PT(tokens)
-
-		c.PrintSection("rest")
-		c.Println(rest)
+		c.PrintSection("error")
+		c.Println(err)
 
 		c.Expect(`
 			################################################################################
-			# tokens
+			# error
 			################################################################################
-			   | TT | S | E |
-			---+----+---+---+
-			################################################################################
-			# rest
-			################################################################################
-			if true 
+			macro(if): no open brace found
 			`)
 	})
-	t.Run("no closing brace with else", func(t *testing.T) {
+	t.Run("no open brace with else", func(t *testing.T) {
 		input := `
 if v == 1 {◊
   one
@@ -233,33 +225,20 @@ if v == 1 {◊
 		ct := tokenizer.NewDefault(interfaces.NewMacros())
 		macroIf := New()
 
-		tokens, rest := macroIf.NextTokens(ct, input)
+		_, _, err := macroIf.NextTokens(ct, input)
 
 		c := ic.New(t)
-		c.PrintSection("tokens")
-		c.PT(tokens)
-
-		c.PrintSection("rest")
-		c.Println(rest)
+		c.PrintSection("error")
+		c.Println(err)
 
 		c.Expect(`
 			################################################################################
-			# tokens
+			# error
 			################################################################################
-			   | TT | S | E |
-			---+----+---+---+
-			################################################################################
-			# rest
-			################################################################################
-			if v == 1 {◊
-			  one
-			◊}  else 
-			  four
-			◊}baz
-			
+			macro(if): no open brace found
 			`)
 	})
-	t.Run("no closing brace with else if", func(t *testing.T) {
+	t.Run("no open brace with else if", func(t *testing.T) {
 		input := `
 if v == 1 {◊
   one
@@ -274,34 +253,43 @@ if v == 1 {◊
 		ct := tokenizer.NewDefault(interfaces.NewMacros())
 		macroIf := New()
 
-		tokens, rest := macroIf.NextTokens(ct, input)
+		_, _, err := macroIf.NextTokens(ct, input)
 
 		c := ic.New(t)
-		c.PrintSection("tokens")
-		c.PT(tokens)
-
-		c.PrintSection("rest")
-		c.Println(rest)
+		c.PrintSection("error")
+		c.Println(err)
 
 		c.Expect(`
 			################################################################################
-			# tokens
+			# error
 			################################################################################
-			   | TT | S | E |
-			---+----+---+---+
+			macro(if): no open brace found
+			`)
+	})
+	t.Run("no close brace", func(t *testing.T) {
+		input := `
+if v == 1 {◊
+  one
+◊}  else  if v == 2 {◊
+  two
+◊}  else  if  v == 3  {◊
+  three
+◊}  else {◊
+  four`[1:]
+		ct := tokenizer.NewDefault(interfaces.NewMacros())
+		macroIf := New()
+
+		_, _, err := macroIf.NextTokens(ct, input)
+
+		c := ic.New(t)
+		c.PrintSection("error")
+		c.Println(err)
+
+		c.Expect(`
 			################################################################################
-			# rest
+			# error
 			################################################################################
-			if v == 1 {◊
-			  one
-			◊}  else  if v == 2 {◊
-			  two
-			◊}  else  if  v == 3 
-			  three
-			◊}  else {◊
-			  four
-			◊}baz
-			
+			macro(if): did not find "◊}"
 			`)
 	})
 }

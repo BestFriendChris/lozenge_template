@@ -21,7 +21,7 @@ for _, v := range vals {◊
 		macroFor := New()
 
 		var tokens []*token.Token
-		tokens, rest = macroFor.NextTokens(ct, rest)
+		tokens, rest, _ = macroFor.NextTokens(ct, rest)
 
 		c := ic.New(t)
 		c.PrintSection("tokens")
@@ -57,5 +57,53 @@ for _, v := range vals {◊
 			bar
 			`)
 	})
+}
 
+func TestMacroFor_NextTokens_errorCases(t *testing.T) {
+	t.Run("no open brace with if", func(t *testing.T) {
+		ct := tokenizer.NewDefault(interfaces.NewMacros())
+
+		input := `
+for _, v := range vals 
+	<span>◊v</span>
+◊}bar`[1:]
+
+		macroFor := New()
+
+		_, _, err := macroFor.NextTokens(ct, input)
+
+		c := ic.New(t)
+		c.PrintSection("error")
+		c.Println(err)
+
+		c.Expect(`
+			################################################################################
+			# error
+			################################################################################
+			macro(for): no open brace found
+			`)
+	})
+	t.Run("no close brace with if", func(t *testing.T) {
+		ct := tokenizer.NewDefault(interfaces.NewMacros())
+
+		input := `
+for _, v := range vals {◊
+	<span>◊v</span>
+`[1:]
+
+		macroFor := New()
+
+		_, _, err := macroFor.NextTokens(ct, input)
+
+		c := ic.New(t)
+		c.PrintSection("error")
+		c.Println(err)
+
+		c.Expect(`
+			################################################################################
+			# error
+			################################################################################
+			macro(for): did not find "◊}"
+			`)
+	})
 }

@@ -716,15 +716,15 @@ func (m LogValue) Name() string {
 	return "LogValue"
 }
 
-func (m LogValue) NextTokens(ct interfaces.ContentTokenizer, rest string) ([]*token.Token, string) {
+func (m LogValue) NextTokens(ct interfaces.ContentTokenizer, rest string) ([]*token.Token, string, error) {
 	rest = strings.TrimPrefix(rest, m.Name())
 	fmt.Printf("Logvalue with %q\n", rest)
 
 	runes := []rune(rest)
 	var tok *token.Token
-	tok, rest = ct.ParseGoCodeFromTo(runes, token.TTcodeLocalExpr, '(', ')', true)
+	tok, rest, _ = ct.ParseGoCodeFromTo(runes, token.TTcodeLocalExpr, '(', ')', true)
 	contentToken := token.NewToken(token.TTcontent, fmt.Sprintf("%s = ", tok.S))
-	return []*token.Token{contentToken, tok}, rest
+	return []*token.Token{contentToken, tok}, rest, nil
 }
 
 func (m LogValue) Parse(_ interfaces.TemplateHandler, toks []*token.Token) (rest []*token.Token, err error) {

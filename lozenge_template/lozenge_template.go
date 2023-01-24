@@ -6,6 +6,7 @@ import (
 	"github.com/BestFriendChris/lozenge/internal/logic/macro/macro_for"
 	"github.com/BestFriendChris/lozenge/internal/logic/macro/macro_if"
 	"github.com/BestFriendChris/lozenge/internal/logic/parser"
+	"github.com/BestFriendChris/lozenge/internal/logic/token"
 	"github.com/BestFriendChris/lozenge/internal/logic/tokenizer"
 )
 
@@ -25,7 +26,9 @@ func (lt *LozengeTemplate) Generate(h interfaces.TemplateHandler, input string) 
 	macros := lt.defaultMacros.Merge(h.DefaultMacros())
 
 	ct := tokenizer.NewDefault(macros)
-	toks := ct.ReadAll(input)
+
+	var toks []*token.Token
+	toks, err = ct.ReadAll(input)
 	toks = tokenizer.Optimize(toks, lt.config.TrimSpaces)
 
 	prs := parser.New(macros)

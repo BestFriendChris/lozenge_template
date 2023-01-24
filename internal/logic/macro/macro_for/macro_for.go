@@ -1,6 +1,7 @@
 package macro_for
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/BestFriendChris/lozenge/interfaces"
@@ -17,19 +18,22 @@ func (m MacroFor) Name() string {
 	return "for"
 }
 
-func (m MacroFor) NextTokens(ct interfaces.ContentTokenizer, input string) (toks []*token.Token, rest string) {
+func (m MacroFor) NextTokens(ct interfaces.ContentTokenizer, input string) (toks []*token.Token, rest string, err error) {
 	rest = input
 	tokens := make([]*token.Token, 0)
 
 	var tok *token.Token
-	tok, rest = ct.NextTokenCodeUntilOpenBraceLoz(rest)
-	if tok == nil {
-		return make([]*token.Token, 0), input
+	tok, rest, err = ct.NextTokenCodeUntilOpenBraceLoz(rest)
+	if err != nil {
+		return nil, "", fmt.Errorf("macro(for): %w", err)
 	}
 	tokens = append(tokens, tok)
 
 	var subTokens []*token.Token
-	subTokens, rest = ct.ReadTokensUntil(rest, "◊}")
+	subTokens, rest, err = ct.ReadTokensUntil(rest, "◊}")
+	if err != nil {
+		return nil, "", fmt.Errorf("macro(for): %w", err)
+	}
 	rest = strings.TrimPrefix(rest, "◊")
 	for _, subToken := range subTokens {
 		tokens = append(tokens, subToken)
@@ -39,7 +43,7 @@ func (m MacroFor) NextTokens(ct interfaces.ContentTokenizer, input string) (toks
 
 	rest = strings.TrimPrefix(rest, "}")
 
-	return tokens, rest
+	return tokens, rest, nil
 }
 
 func (m MacroFor) Parse(_ interfaces.TemplateHandler, toks []*token.Token) (rest []*token.Token, err error) {

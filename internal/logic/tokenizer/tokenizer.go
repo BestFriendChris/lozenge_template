@@ -1,6 +1,7 @@
 package tokenizer
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
 
@@ -24,32 +25,39 @@ func New(loz rune, macros *interfaces.Macros) *ContentTokenizer {
 	}
 }
 
-func (ct *ContentTokenizer) ReadAll(input string) []*token.Token {
-	toks, _ := ct.ReadTokensUntil(input, "")
-	return toks
+func (ct *ContentTokenizer) ReadAll(input string) ([]*token.Token, error) {
+	toks, _, err := ct.ReadTokensUntil(input, "")
+	return toks, err
 }
 
-func (ct *ContentTokenizer) ReadTokensUntil(input, stopAt string) ([]*token.Token, string) {
-	rest := input
-	tokens := make([]*token.Token, 0)
+func (ct *ContentTokenizer) ReadTokensUntil(input, stopAt string) (tokens []*token.Token, rest string, err error) {
+	rest = input
+	tokens = make([]*token.Token, 0)
 	var toks []*token.Token
 	for {
 		if len(rest) == 0 {
 			break
 		}
 		if stopAt != "" && strings.HasPrefix(rest, stopAt) {
-			break
+			return tokens, rest, nil
 		}
 
-		toks, rest = ct.NextTokens(rest)
+		toks, rest, err = ct.NextTokens(rest)
+		if err != nil {
+			return toks, rest, err
+		}
 		for _, tok := range toks {
 			tokens = append(tokens, tok)
 		}
 	}
-	return tokens, rest
+	if stopAt != "" {
+		return nil, "", fmt.Errorf("did not find %q", stopAt)
+	} else {
+		return tokens, rest, nil
+	}
 }
 
-func (ct *ContentTokenizer) NextTokens(s string) ([]*token.Token, string) {
+func (ct *ContentTokenizer) NextTokens(s string) ([]*token.Token, string, error) {
 	var tt token.TokenType
 	var endIdx int
 	runes := []rune(s)
@@ -90,10 +98,10 @@ loop:
 			}
 		}
 	}
-	return []*token.Token{token.NewToken(tt, s[:endIdx])}, s[endIdx:]
+	return []*token.Token{token.NewToken(tt, s[:endIdx])}, s[endIdx:], nil
 }
 
-func (ct *ContentTokenizer) NextTokenCodeUntilOpenBraceLoz(s string) (*token.Token, string) {
+func (ct *ContentTokenizer) NextTokenCodeUntilOpenBraceLoz(s string) (*token.Token, string, error) {
 	runes := []rune(s)
 	var endIdx int
 	var inString, inBackQuotes, escapeInQuote bool
@@ -138,19 +146,19 @@ func (ct *ContentTokenizer) NextTokenCodeUntilOpenBraceLoz(s string) (*token.Tok
 		}
 	}
 	if endIdx == 0 {
-		return nil, s
+		return nil, "", fmt.Errorf("no open brace found")
 	} else {
-		return token.NewToken(token.TTcodeLocalBlock, string(runes[:endIdx])), string(runes[endIdx+1:])
+		return token.NewToken(token.TTcodeLocalBlock, string(runes[:endIdx])), string(runes[endIdx+1:]), nil
 	}
 }
 
-func (ct *ContentTokenizer) lozengeFallback(runes []rune) (*token.Token, string) {
-	return token.NewToken(token.TTcontent, string(ct.loz)), string(runes)
+func (ct *ContentTokenizer) lozengeFallback(runes []rune) (*token.Token, string, error) {
+	return token.NewToken(token.TTcontent, string(ct.loz)), string(runes), nil
 }
 
-func (ct *ContentTokenizer) parseLozenge(runes []rune) ([]*token.Token, string) {
-	singletonToks := func(t *token.Token, rest string) ([]*token.Token, string) {
-		return []*token.Token{t}, rest
+func (ct *ContentTokenizer) parseLozenge(runes []rune) ([]*token.Token, string, error) {
+	singletonToks := func(t *token.Token, rest string, err error) ([]*token.Token, string, error) {
+		return []*token.Token{t}, rest, err
 	}
 	if len(runes) == 0 {
 		return singletonToks(ct.lozengeFallback(runes))
@@ -177,35 +185,33 @@ func (ct *ContentTokenizer) parseLozenge(runes []rune) ([]*token.Token, string) 
 		if len(identifier) == 0 {
 			return singletonToks(ct.lozengeFallback(runes))
 		} else {
-			return singletonToks(token.NewToken(token.TTcodeLocalExpr, identifier), rest)
+			return singletonToks(token.NewToken(token.TTcodeLocalExpr, identifier), rest, nil)
 		}
 	}
 }
 
-func (ct *ContentTokenizer) parseMacroIdentifier(runes []rune) (tokens []*token.Token, rest string) {
+func (ct *ContentTokenizer) parseMacroIdentifier(runes []rune) (tokens []*token.Token, rest string, err error) {
 	runesSkipDot := runes[1:]
 	identifier, _ := ct.readIdentifier(runesSkipDot)
 	if len(identifier) == 0 {
-		tok, s := ct.lozengeFallback(runes)
-		return []*token.Token{tok}, s
+		tok, s, _ := ct.lozengeFallback(runes)
+		return []*token.Token{tok}, s, nil
 	}
 	m, found := ct.macros.Get(identifier)
 	if found {
 		tokens = []*token.Token{token.NewToken(token.TTmacro, identifier)}
 		var nextTokens []*token.Token
-		nextTokens, rest = m.NextTokens(ct, string(runes[1:]))
+		nextTokens, rest, _ = m.NextTokens(ct, string(runes[1:]))
 		for _, nextToken := range nextTokens {
 			tokens = append(tokens, nextToken)
 		}
 	} else {
-		var tok *token.Token
-		tok, rest = ct.lozengeFallback(runes)
-		tokens = []*token.Token{tok}
+		return make([]*token.Token, 0), "", fmt.Errorf("unknown macro %q", identifier)
 	}
 	return
 }
 
-func (ct *ContentTokenizer) ParseGoToClosingBrace(runes []rune) (*token.Token, string) {
+func (ct *ContentTokenizer) ParseGoToClosingBrace(runes []rune) (*token.Token, string, error) {
 	var tt token.TokenType
 	if runes[0] == '^' {
 		tt = token.TTcodeGlobalBlock
@@ -216,7 +222,7 @@ func (ct *ContentTokenizer) ParseGoToClosingBrace(runes []rune) (*token.Token, s
 	return ct.ParseGoCodeFromTo(runes, tt, '{', '}', false)
 }
 
-func (ct *ContentTokenizer) ParseGoCodeFromTo(runes []rune, tt token.TokenType, open, close rune, keep bool) (*token.Token, string) {
+func (ct *ContentTokenizer) ParseGoCodeFromTo(runes []rune, tt token.TokenType, open, close rune, keep bool) (*token.Token, string, error) {
 	var openCloseCount, endIdx int
 	var inString, inBackQuotes, inChar, escapeInQuote bool
 	for i, r := range runes {
@@ -269,13 +275,13 @@ func (ct *ContentTokenizer) ParseGoCodeFromTo(runes []rune, tt token.TokenType, 
 	}
 	var s, rest []rune
 	if openCloseCount > 0 {
-		return ct.lozengeFallback(runes)
+		return nil, "", fmt.Errorf("did not find matched '%c'", close)
 	} else if keep {
 		s, rest = runes[0:endIdx], runes[endIdx:]
 	} else {
 		s, rest = runes[1:endIdx-1], runes[endIdx:]
 	}
-	return token.NewToken(tt, string(s)), string(rest)
+	return token.NewToken(tt, string(s)), string(rest), nil
 }
 
 func isLetter(r rune) bool {
