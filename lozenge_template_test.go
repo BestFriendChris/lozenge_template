@@ -109,6 +109,64 @@ Loz-EOL is also ignored ◊`[1:]
 		})
 
 	})
+	t.Run("lozenge simple - different marker", func(t *testing.T) {
+		input := `
+∆{
+foo := 1
+baz_123 := 2}hi ∆foo bar
+<span>∆baz_123</span>there
+Loz-space is ignored "∆ "
+Loz-newline is also ignored ∆
+Loz-Loz is also ignored "∆∆"
+Loz-EOL is also ignored ∆`[1:]
+
+		config := NewParserConfig().WithMarker('∆')
+		output := GenerateWithTestHandlerWithMacrosWithConfig(t, input, nil, config)
+
+		t.Run("generate go", func(t *testing.T) {
+			c := ic.New(t)
+			c.Print(output)
+			c.Expect(`
+				package main
+				
+				import (
+					"bytes"
+					"fmt"
+				)
+				
+				func main() {
+					buf := new(bytes.Buffer)
+				
+					foo := 1
+					baz_123 := 2
+					buf.WriteString("hi ")
+					buf.WriteString(fmt.Sprintf("%v", foo))
+					buf.WriteString(" bar\n<span>")
+					buf.WriteString(fmt.Sprintf("%v", baz_123))
+					buf.WriteString("</span>there\nLoz-space is ignored \"∆ \"\nLoz-newline is also")
+					buf.WriteString(" ignored ∆\nLoz-Loz is also ignored \"∆\"\nLoz-EOL is also ")
+					buf.WriteString("ignored ∆")
+					fmt.Print(buf.String())
+				}
+				`)
+		})
+		t.Run("compile and run", func(t *testing.T) {
+			if testing.Short() {
+				t.Skip()
+			}
+			stdout := execAndReturnStdOut(t, "simple", output)
+			c := ic.New(t)
+			c.Print(stdout)
+			c.Expect(`
+				hi 1 bar
+				<span>2</span>there
+				Loz-space is ignored "∆ "
+				Loz-newline is also ignored ∆
+				Loz-Loz is also ignored "∆"
+				Loz-EOL is also ignored ∆`)
+		})
+
+	})
 	t.Run("lozenge expression", func(t *testing.T) {
 		input := `foo ◊(1 + 2) bar`
 

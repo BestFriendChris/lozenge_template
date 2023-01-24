@@ -25,7 +25,7 @@ type LozengeTemplate struct {
 func (lt *LozengeTemplate) Generate(h interfaces.TemplateHandler, input string) (goCode string, err error) {
 	macros := lt.defaultMacros.Merge(h.DefaultMacros())
 
-	ct := tokenizer.NewDefault(macros)
+	ct := tokenizer.New(lt.config.Loz, macros)
 
 	var toks []*token.Token
 	toks, err = ct.ReadAll(input)
@@ -43,8 +43,7 @@ func (lt *LozengeTemplate) Generate(h interfaces.TemplateHandler, input string) 
 		return "", err
 	}
 
-	goCode, err = go_format.Format(goCode)
-	return
+	return go_format.Format(goCode)
 }
 
 func defaultMacros(overrideMacros *interfaces.Macros) *interfaces.Macros {
