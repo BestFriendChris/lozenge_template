@@ -1,14 +1,17 @@
 package interfaces
 
-import "github.com/BestFriendChris/lozenge_template/internal/logic/token"
+import (
+	"github.com/BestFriendChris/lozenge_template/input"
+	"github.com/BestFriendChris/lozenge_template/internal/logic/token"
+)
 
 type Tokenizer interface {
-	NextTokens(ct ContentTokenizer, input string) (toks []*token.Token, rest string, err error)
+	NextTokens(ct ContentTokenizer, in *input.Input) (toks []*token.Token, err error)
 }
 
 type ContentTokenizer interface {
-	NextTokenCodeUntilOpenBraceLoz(s string) (*token.Token, string, error)
-	ReadTokensUntil(input, stopAt string) ([]*token.Token, string, error)
-	ParseGoCodeFromTo(runes []rune, tt token.TokenType, open, close rune, keep bool) (*token.Token, string, error)
-	ParseGoToClosingBrace(runes []rune) (*token.Token, string, error)
+	NextTokenCodeUntilOpenBraceLoz(in *input.Input) (*token.Token, error)
+	ReadTokensUntil(in *input.Input, stopAt string) ([]*token.Token, error)
+	ParseGoCodeFromTo(in *input.Input, tt token.TokenType, open, close rune, keep bool) (*token.Token, error)
+	ParseGoToClosingBrace(in *input.Input) (*token.Token, error)
 }

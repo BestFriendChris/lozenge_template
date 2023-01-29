@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/BestFriendChris/go-ic/ic"
+	"github.com/BestFriendChris/lozenge_template/input"
 	"github.com/BestFriendChris/lozenge_template/interfaces"
 	"github.com/BestFriendChris/lozenge_template/internal/logic/token"
 	"github.com/BestFriendChris/lozenge_template/internal/logic/tokenizer"
@@ -13,7 +14,7 @@ func TestMacroFor_NextTokens(t *testing.T) {
 	t.Run("basic for", func(t *testing.T) {
 		ct := tokenizer.NewDefault(interfaces.NewMacros())
 
-		rest := `
+		s := `
 for _, v := range vals {◊
 	<span>◊v</span>
 ◊}bar`[1:]
@@ -21,7 +22,9 @@ for _, v := range vals {◊
 		macroFor := New()
 
 		var tokens []*token.Token
-		tokens, rest, _ = macroFor.NextTokens(ct, rest)
+		in := input.NewInput(s)
+		tokens, _ = macroFor.NextTokens(ct, in)
+		rest := in.Rest()
 
 		c := ic.New(t)
 		c.PrintSection("tokens")
@@ -60,17 +63,18 @@ for _, v := range vals {◊
 }
 
 func TestMacroFor_NextTokens_errorCases(t *testing.T) {
-	t.Run("no open brace with if", func(t *testing.T) {
+	t.Run("no open brace with for", func(t *testing.T) {
 		ct := tokenizer.NewDefault(interfaces.NewMacros())
 
-		input := `
+		s := `
 for _, v := range vals 
 	<span>◊v</span>
 ◊}bar`[1:]
 
 		macroFor := New()
 
-		_, _, err := macroFor.NextTokens(ct, input)
+		in := input.NewInput(s)
+		_, err := macroFor.NextTokens(ct, in)
 
 		c := ic.New(t)
 		c.PrintSection("error")
@@ -80,20 +84,23 @@ for _, v := range vals
 			################################################################################
 			# error
 			################################################################################
-			macro(for): no open brace found
+			line 1: for _, v := range vals 
+			        ▲
+			        └── no open brace found
 			`)
 	})
 	t.Run("no close brace with if", func(t *testing.T) {
 		ct := tokenizer.NewDefault(interfaces.NewMacros())
 
-		input := `
+		s := `
 for _, v := range vals {◊
 	<span>◊v</span>
 `[1:]
 
 		macroFor := New()
 
-		_, _, err := macroFor.NextTokens(ct, input)
+		in := input.NewInput(s)
+		_, err := macroFor.NextTokens(ct, in)
 
 		c := ic.New(t)
 		c.PrintSection("error")
@@ -103,7 +110,9 @@ for _, v := range vals {◊
 			################################################################################
 			# error
 			################################################################################
-			macro(for): did not find "◊}"
+			line 3: 
+			        ▲
+			        └── did not find "◊}"
 			`)
 	})
 }

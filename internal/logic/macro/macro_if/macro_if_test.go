@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/BestFriendChris/go-ic/ic"
+	"github.com/BestFriendChris/lozenge_template/input"
 	"github.com/BestFriendChris/lozenge_template/interfaces"
 	"github.com/BestFriendChris/lozenge_template/internal/logic/token"
 	"github.com/BestFriendChris/lozenge_template/internal/logic/tokenizer"
@@ -21,7 +22,9 @@ if reflect.DeepEqual(val, []string{"foo"}) {◊
 		macroIf := New()
 
 		var tokens []*token.Token
-		tokens, rest, _ = macroIf.NextTokens(ct, rest)
+		in := input.NewInput(rest)
+		tokens, _ = macroIf.NextTokens(ct, in)
+		rest = in.Rest()
 
 		c := ic.New(t)
 		c.PrintSection("tokens")
@@ -67,7 +70,9 @@ if true {◊
 		macroIf := New()
 
 		var tokens []*token.Token
-		tokens, rest, _ = macroIf.NextTokens(ct, rest)
+		in := input.NewInput(rest)
+		tokens, _ = macroIf.NextTokens(ct, in)
+		rest = in.Rest()
 
 		c := ic.New(t)
 		c.PrintSection("tokens")
@@ -129,7 +134,9 @@ if v == 1 {◊
 		macroIf := New()
 
 		var tokens []*token.Token
-		tokens, rest, _ = macroIf.NextTokens(ct, rest)
+		in := input.NewInput(rest)
+		tokens, _ = macroIf.NextTokens(ct, in)
+		rest = in.Rest()
 
 		c := ic.New(t)
 		c.PrintSection("tokens")
@@ -197,11 +204,12 @@ if v == 1 {◊
 
 func TestMacroIf_NextTokens_errorCases(t *testing.T) {
 	t.Run("no open brace with if", func(t *testing.T) {
-		input := `if true `
+		s := `if true `
 		ct := tokenizer.NewDefault(interfaces.NewMacros())
 		macroIf := New()
 
-		_, _, err := macroIf.NextTokens(ct, input)
+		in := input.NewInput(s)
+		_, err := macroIf.NextTokens(ct, in)
 
 		c := ic.New(t)
 		c.PrintSection("error")
@@ -211,11 +219,13 @@ func TestMacroIf_NextTokens_errorCases(t *testing.T) {
 			################################################################################
 			# error
 			################################################################################
-			macro(if): no open brace found
+			line 1: if true 
+			        ▲
+			        └── no open brace found
 			`)
 	})
 	t.Run("no open brace with else", func(t *testing.T) {
-		input := `
+		s := `
 if v == 1 {◊
   one
 ◊}  else 
@@ -225,7 +235,8 @@ if v == 1 {◊
 		ct := tokenizer.NewDefault(interfaces.NewMacros())
 		macroIf := New()
 
-		_, _, err := macroIf.NextTokens(ct, input)
+		in := input.NewInput(s)
+		_, err := macroIf.NextTokens(ct, in)
 
 		c := ic.New(t)
 		c.PrintSection("error")
@@ -235,11 +246,13 @@ if v == 1 {◊
 			################################################################################
 			# error
 			################################################################################
-			macro(if): no open brace found
+			line 3: ◊}  else 
+			         ▲
+			         └── no open brace found
 			`)
 	})
 	t.Run("no open brace with else if", func(t *testing.T) {
-		input := `
+		s := `
 if v == 1 {◊
   one
 ◊}  else  if v == 2 {◊
@@ -253,7 +266,8 @@ if v == 1 {◊
 		ct := tokenizer.NewDefault(interfaces.NewMacros())
 		macroIf := New()
 
-		_, _, err := macroIf.NextTokens(ct, input)
+		in := input.NewInput(s)
+		_, err := macroIf.NextTokens(ct, in)
 
 		c := ic.New(t)
 		c.PrintSection("error")
@@ -263,11 +277,13 @@ if v == 1 {◊
 			################################################################################
 			# error
 			################################################################################
-			macro(if): no open brace found
+			line 5: ◊}  else  if  v == 3 
+			         ▲
+			         └── no open brace found
 			`)
 	})
 	t.Run("no close brace", func(t *testing.T) {
-		input := `
+		s := `
 if v == 1 {◊
   one
 ◊}  else  if v == 2 {◊
@@ -279,7 +295,8 @@ if v == 1 {◊
 		ct := tokenizer.NewDefault(interfaces.NewMacros())
 		macroIf := New()
 
-		_, _, err := macroIf.NextTokens(ct, input)
+		in := input.NewInput(s)
+		_, err := macroIf.NextTokens(ct, in)
 
 		c := ic.New(t)
 		c.PrintSection("error")
@@ -289,7 +306,9 @@ if v == 1 {◊
 			################################################################################
 			# error
 			################################################################################
-			macro(if): did not find "◊}"
+			line 8:   four
+			              ▲
+			              └── did not find "◊}"
 			`)
 	})
 }

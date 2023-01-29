@@ -6,21 +6,21 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/BestFriendChris/go-ic/ic"
 	"github.com/BestFriendChris/lozenge_template/handler/main_handler"
+	"github.com/BestFriendChris/lozenge_template/input"
 	"github.com/BestFriendChris/lozenge_template/interfaces"
 	"github.com/BestFriendChris/lozenge_template/internal/logic/token"
 )
 
-func TestGenerate(t *testing.T) {
+func TestLozengeTemplate_Generate(t *testing.T) {
 	t.Run("simple", func(t *testing.T) {
-		input := `
+		s := `
 hi
 there`[1:]
-		output := GenerateWithTestHandler(t, input)
+		output := GenerateWithTestHandler(t, s)
 
 		t.Run("generate go", func(t *testing.T) {
 			c := ic.New(t)
@@ -54,7 +54,7 @@ there`[1:]
 
 	})
 	t.Run("lozenge simple", func(t *testing.T) {
-		input := `
+		s := `
 ◊{
 foo := 1
 baz_123 := 2}hi ◊foo bar
@@ -63,7 +63,7 @@ Loz-space is ignored "◊ "
 Loz-newline is also ignored ◊
 Loz-Loz is also ignored "◊◊"
 Loz-EOL is also ignored ◊`[1:]
-		output := GenerateWithTestHandler(t, input)
+		output := GenerateWithTestHandler(t, s)
 
 		t.Run("generate go", func(t *testing.T) {
 			c := ic.New(t)
@@ -110,7 +110,7 @@ Loz-EOL is also ignored ◊`[1:]
 
 	})
 	t.Run("lozenge simple - different marker", func(t *testing.T) {
-		input := `
+		s := `
 ∆{
 foo := 1
 baz_123 := 2}hi ∆foo bar
@@ -121,7 +121,7 @@ Loz-Loz is also ignored "∆∆"
 Loz-EOL is also ignored ∆`[1:]
 
 		config := NewParserConfig().WithMarker('∆')
-		output := GenerateWithTestHandlerWithMacrosWithConfig(t, input, nil, config)
+		output := GenerateWithTestHandlerWithMacrosWithConfig(t, s, nil, config)
 
 		t.Run("generate go", func(t *testing.T) {
 			c := ic.New(t)
@@ -168,9 +168,9 @@ Loz-EOL is also ignored ∆`[1:]
 
 	})
 	t.Run("lozenge expression", func(t *testing.T) {
-		input := `foo ◊(1 + 2) bar`
+		s := `foo ◊(1 + 2) bar`
 
-		output := GenerateWithTestHandler(t, input)
+		output := GenerateWithTestHandler(t, s)
 
 		t.Run("generate go", func(t *testing.T) {
 			c := ic.New(t)
@@ -204,11 +204,11 @@ Loz-EOL is also ignored ∆`[1:]
 
 	})
 	t.Run("lozenge local block", func(t *testing.T) {
-		input := `
+		s := `
 ◊{ foo := "Chris" }
 Hello ◊foo`[1:]
 
-		output := GenerateWithTestHandler(t, input)
+		output := GenerateWithTestHandler(t, s)
 
 		t.Run("generate go", func(t *testing.T) {
 			c := ic.New(t)
@@ -242,7 +242,7 @@ Hello ◊foo`[1:]
 
 	})
 	t.Run("lozenge global block", func(t *testing.T) {
-		input := `
+		s := `
 ◊^{import "strings"
 	func myName() string {
 		return "chris"
@@ -251,9 +251,9 @@ Hello ◊foo`[1:]
 ◊{ foo := strings.ToUpper(myName()) }
 Hello ◊foo`[1:]
 
-		output := GenerateWithTestHandler(t, input)
+		output := GenerateWithTestHandler(t, s)
 		config := NewParserConfig().WithTrimSpaces()
-		outputTrimSpaces := GenerateWithTestHandlerWithMacrosWithConfig(t, input, nil, config)
+		outputTrimSpaces := GenerateWithTestHandlerWithMacrosWithConfig(t, s, nil, config)
 
 		t.Run("generate go", func(t *testing.T) {
 			c := ic.New(t)
@@ -329,7 +329,7 @@ Hello ◊foo`[1:]
 
 	})
 	t.Run("lozenge macro - if", func(t *testing.T) {
-		input := `
+		s := `
 Try:
 ◊{val := "hi"}
 ◊.if val != "" {◊
@@ -341,9 +341,9 @@ Try:
 ◊}
 DONE`[1:]
 
-		output := GenerateWithTestHandler(t, input)
+		output := GenerateWithTestHandler(t, s)
 		config := NewParserConfig().WithTrimSpaces()
-		outputTrimSpaces := GenerateWithTestHandlerWithMacrosWithConfig(t, input, nil, config)
+		outputTrimSpaces := GenerateWithTestHandlerWithMacrosWithConfig(t, s, nil, config)
 
 		t.Run("generate go", func(t *testing.T) {
 			c := ic.New(t)
@@ -434,7 +434,7 @@ DONE`[1:]
 
 	})
 	t.Run("lozenge macro - for", func(t *testing.T) {
-		input := `
+		s := `
 Try:
 ◊{vals := []string{"a", "b"}}
 ◊.for _, v := range vals {◊
@@ -442,9 +442,9 @@ Try:
 ◊}
 DONE`[1:]
 
-		output := GenerateWithTestHandler(t, input)
+		output := GenerateWithTestHandler(t, s)
 		config := NewParserConfig().WithTrimSpaces()
-		outputTrimSpaces := GenerateWithTestHandlerWithMacrosWithConfig(t, input, nil, config)
+		outputTrimSpaces := GenerateWithTestHandlerWithMacrosWithConfig(t, s, nil, config)
 
 		t.Run("generate go", func(t *testing.T) {
 			c := ic.New(t)
@@ -530,7 +530,7 @@ DONE`[1:]
 
 	})
 	t.Run("complex example", func(t *testing.T) {
-		input := `
+		s := `
 Try:
 ◊{ vals := []string{"a", "b", "c", "d"} }
 ◊.for _, v := range vals {◊
@@ -555,8 +555,8 @@ DONE
 		macros.Add(LogValue{})
 		config := NewParserConfig()
 
-		output := GenerateWithTestHandlerWithMacrosWithConfig(t, input, macros, config)
-		outputTrimSpaces := GenerateWithTestHandlerWithMacrosWithConfig(t, input, macros, config.WithTrimSpaces())
+		output := GenerateWithTestHandlerWithMacrosWithConfig(t, s, macros, config)
+		outputTrimSpaces := GenerateWithTestHandlerWithMacrosWithConfig(t, s, macros, config.WithTrimSpaces())
 
 		t.Run("generate go", func(t *testing.T) {
 			c := ic.New(t)
@@ -709,6 +709,32 @@ DONE
 	})
 }
 
+func TestLozengeTemplate_Generate_errorCases(t *testing.T) {
+	t.Run("show context around error", func(t *testing.T) {
+		t.Run("single line", func(t *testing.T) {
+			s := `foo ◊(1 + 2 bar`
+
+			testHandler := &main_handler.MainHandler{}
+			p := New(nil, NewParserConfig())
+
+			_, err := p.Generate(testHandler, s)
+
+			c := ic.New(t)
+			c.PrintSection("error")
+			c.Println(err)
+
+			c.Expect(`
+				################################################################################
+				# error
+				################################################################################
+				line 1: foo ◊(1 + 2 bar
+				             ▲
+				             └── did not find matched ')'
+				`)
+		})
+	})
+}
+
 func GenerateWithTestHandler(t testing.TB, s string) string {
 	t.Helper()
 	return GenerateWithTestHandlerWithMacros(t, s, nil)
@@ -774,15 +800,15 @@ func (m LogValue) Name() string {
 	return "LogValue"
 }
 
-func (m LogValue) NextTokens(ct interfaces.ContentTokenizer, rest string) ([]*token.Token, string, error) {
-	rest = strings.TrimPrefix(rest, m.Name())
-	fmt.Printf("Logvalue with %q\n", rest)
-
-	runes := []rune(rest)
-	var tok *token.Token
-	tok, rest, _ = ct.ParseGoCodeFromTo(runes, token.TTcodeLocalExpr, '(', ')', true)
-	contentToken := token.NewToken(token.TTcontent, fmt.Sprintf("%s = ", tok.S))
-	return []*token.Token{contentToken, tok}, rest, nil
+func (m LogValue) NextTokens(ct interfaces.ContentTokenizer, in *input.Input) (toks []*token.Token, err error) {
+	_ = in.ConsumeString(m.Name())
+	var valTok *token.Token
+	valTok, err = ct.ParseGoCodeFromTo(in, token.TTcodeLocalExpr, '(', ')', true)
+	if err != nil {
+		return nil, err
+	}
+	contentToken := token.NewToken(token.TTcontent, fmt.Sprintf("%s = ", valTok.S))
+	return []*token.Token{contentToken, valTok}, nil
 }
 
 func (m LogValue) Parse(_ interfaces.TemplateHandler, toks []*token.Token) (rest []*token.Token, err error) {

@@ -1,6 +1,7 @@
 package lozenge_template
 
 import (
+	"github.com/BestFriendChris/lozenge_template/input"
 	"github.com/BestFriendChris/lozenge_template/interfaces"
 	"github.com/BestFriendChris/lozenge_template/internal/infra/go_format"
 	"github.com/BestFriendChris/lozenge_template/internal/logic/macro/macro_for"
@@ -22,13 +23,18 @@ type LozengeTemplate struct {
 	defaultMacros *interfaces.Macros
 }
 
-func (lt *LozengeTemplate) Generate(h interfaces.TemplateHandler, input string) (goCode string, err error) {
+func (lt *LozengeTemplate) Generate(h interfaces.TemplateHandler, s string) (goCode string, err error) {
 	macros := lt.defaultMacros.Merge(h.DefaultMacros())
 
 	ct := tokenizer.New(lt.config.Loz, macros)
 
 	var toks []*token.Token
-	toks, err = ct.ReadAll(input)
+
+	in := input.NewInput(s)
+	toks, err = ct.ReadAll(in)
+	if err != nil {
+		return "", err
+	}
 	toks = tokenizer.Optimize(toks, lt.config.TrimSpaces)
 
 	prs := parser.New(macros)
