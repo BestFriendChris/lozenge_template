@@ -11,19 +11,16 @@ import (
 )
 
 type Input struct {
-	str  string
-	rest []rune
-	idx  int
+	str string
+	idx int
 }
 
 func NewInput(s string) *Input {
-	return &Input{str: s, rest: []rune(s)}
+	return &Input{str: s}
 }
 
 func (i *Input) Rest() string {
-	r := make([]rune, len(i.rest))
-	copy(r, i.rest)
-	return string(r)
+	return i.str[i.idx:]
 }
 
 func (i *Input) Consumed() bool {
@@ -43,7 +40,6 @@ func (i *Input) Consume(r rune) bool {
 func (i *Input) ConsumeString(prefix string) bool {
 	if i.HasPrefix(prefix) {
 		i.idx += len(prefix)
-		i.rest = []rune(i.str[i.idx:])
 		return true
 	} else {
 		return false
@@ -51,11 +47,10 @@ func (i *Input) ConsumeString(prefix string) bool {
 }
 
 func (i *Input) ConsumeRegexp(r *regexp.Regexp) (string, bool) {
-	found := r.FindIndex([]byte(string(i.rest)))
+	found := r.FindIndex([]byte(i.Rest()))
 	if found != nil && found[0] == 0 {
-		match := i.str[i.idx : i.idx+found[1]]
+		match := i.Rest()[:found[1]]
 		i.idx += found[1]
-		i.rest = []rune(i.str[i.idx:])
 		return match, true
 	} else {
 		return "", false
@@ -63,19 +58,21 @@ func (i *Input) ConsumeRegexp(r *regexp.Regexp) (string, bool) {
 }
 
 func (i *Input) HasPrefix(prefix string) bool {
-	return strings.HasPrefix(i.str[i.idx:], prefix)
+	return strings.HasPrefix(i.Rest(), prefix)
 }
 
 func (i *Input) HasPrefixRegexp(r *regexp.Regexp) bool {
-	found := r.FindIndex([]byte(string(i.rest)))
+	found := r.FindIndex([]byte(i.Rest()))
 	return found != nil && found[0] == 0
 }
 
 func (i *Input) Peek() (r rune, found bool) {
-	if len(i.rest) == 0 {
+	var size int
+	r, size = utf8.DecodeRuneInString(i.Rest())
+	if size == 0 {
 		return utf8.RuneError, false
 	}
-	return i.rest[0], true
+	return r, true
 }
 
 func (i *Input) Shift(expected rune) {
@@ -87,7 +84,6 @@ func (i *Input) Shift(expected rune) {
 		panic(fmt.Sprintf("unable to skip '%c' (found '%c')", expected, r))
 	}
 	i.idx += utf8.RuneLen(r)
-	i.rest = i.rest[1:]
 }
 
 func (i *Input) Unshift(expected rune) {
@@ -99,7 +95,6 @@ func (i *Input) UnshiftString(expected string) {
 		panic(fmt.Sprintf("unable to unshift %q: (found %q)", expected, i.str[i.idx-(len(expected)):i.idx]))
 	}
 	i.idx -= len(expected)
-	i.rest = []rune(i.str[i.idx:])
 }
 
 func (i *Input) ErrorHere(err error) error {
@@ -130,7 +125,6 @@ func (i *Input) TryReadWhile(f func(r rune, last bool) (bool, error)) (string, e
 		test, err := f(r, i.isLast())
 		if err != nil {
 			i.idx = startIdx
-			i.rest = []rune(i.str[startIdx:])
 			return "", i.ErrorHere(err)
 		}
 		if test {
@@ -139,7 +133,7 @@ func (i *Input) TryReadWhile(f func(r rune, last bool) (bool, error)) (string, e
 		} else {
 			break
 		}
-		if len(i.rest) == 0 {
+		if i.Rest() == "" {
 			break
 		}
 	}
@@ -147,5 +141,6 @@ func (i *Input) TryReadWhile(f func(r rune, last bool) (bool, error)) (string, e
 }
 
 func (i *Input) isLast() bool {
-	return len(i.rest) == 1
+	_, size := utf8.DecodeRuneInString(i.Rest())
+	return len(i.str)-size == i.idx
 }
