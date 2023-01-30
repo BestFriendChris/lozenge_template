@@ -238,3 +238,95 @@ this is line 3`[1:]
 			`)
 	})
 }
+
+func TestInput_Col(t *testing.T) {
+	t.Run("single line", func(t *testing.T) {
+		s := `only one line`
+		in := NewInput(s)
+		c := ic.New(t)
+
+		c.PrintSection("start")
+		c.Println(in.Col())
+
+		c.PrintSection(`seek to "one"`)
+		in.Seek(strings.Index(s, "one"))
+		c.Println(in.Col())
+
+		c.PrintSection("seek to end")
+		in.Seek(len(s))
+		c.Println(in.Col())
+
+		c.Expect(`
+			################################################################################
+			# start
+			################################################################################
+			1
+			################################################################################
+			# seek to "one"
+			################################################################################
+			6
+			################################################################################
+			# seek to end
+			################################################################################
+			14
+			`)
+	})
+	t.Run("multi line", func(t *testing.T) {
+		s := `
+this is line 1
+this is line 2
+this is line 3`[1:]
+		in := NewInput(s)
+		c := ic.New(t)
+
+		c.PrintSection("start")
+		c.PVWN("Line", in.Line())
+		c.PVWN("Col", in.Col())
+		c.PVWN("Rest", in.Rest())
+
+		c.PrintSection(`seek to first newline`)
+		in.Seek(strings.Index(s, "\nthis is line 2"))
+		c.PVWN("Line", in.Line())
+		c.PVWN("Col", in.Col())
+		c.PVWN("Rest", in.Rest())
+
+		c.PrintSection(`seek to "one"`)
+		in.Seek(strings.Index(s, "line 2"))
+		c.PVWN("Line", in.Line())
+		c.PVWN("Col", in.Col())
+		c.PVWN("Rest", in.Rest())
+
+		c.PrintSection("seek to end")
+		in.Seek(len(s))
+		c.PVWN("Line", in.Line())
+		c.PVWN("Col", in.Col())
+		c.PVWN("Rest", in.Rest())
+
+		c.Expect(`
+			################################################################################
+			# start
+			################################################################################
+			Line: 1
+			Col: 1
+			Rest: "this is line 1\nthis is line 2\nthis is line 3"
+			################################################################################
+			# seek to first newline
+			################################################################################
+			Line: 1
+			Col: 15
+			Rest: "\nthis is line 2\nthis is line 3"
+			################################################################################
+			# seek to "one"
+			################################################################################
+			Line: 2
+			Col: 9
+			Rest: "line 2\nthis is line 3"
+			################################################################################
+			# seek to end
+			################################################################################
+			Line: 3
+			Col: 15
+			Rest: ""
+			`)
+	})
+}

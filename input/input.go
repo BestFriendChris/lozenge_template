@@ -64,6 +64,14 @@ func (i *Input) Line() int {
 	return i.lineNo
 }
 
+func (i *Input) Col() int {
+	var leftIdx int
+	if i.lineNo > 1 {
+		leftIdx = i.lineIdx[i.lineNo-2]
+	}
+	return (i.idx - leftIdx) + 1
+}
+
 func (i *Input) Consumed() bool {
 	return i.idx >= len(i.str)
 }
