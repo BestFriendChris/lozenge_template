@@ -60,16 +60,8 @@ func (i *Input) Rest() string {
 	return i.str[i.idx:]
 }
 
-func (i *Input) Line() int {
-	return i.lineNo
-}
-
-func (i *Input) Col() int {
-	var leftIdx int
-	if i.lineNo > 1 {
-		leftIdx = i.lineIdx[i.lineNo-2]
-	}
-	return (i.idx - leftIdx) + 1
+func (i *Input) Pos() Pos {
+	return Pos{i.idx, i.lineNo, i.col()}
 }
 
 func (i *Input) Consumed() bool {
@@ -207,4 +199,12 @@ func makeLineIdx(s string) []int {
 		lines = append(lines, idxSoFar)
 	}
 	return lines
+}
+
+func (i *Input) col() int {
+	var leftIdx int
+	if i.lineNo > 1 {
+		leftIdx = i.lineIdx[i.lineNo-2]
+	}
+	return (i.idx - leftIdx) + 1
 }
