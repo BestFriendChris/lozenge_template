@@ -3,6 +3,7 @@ package input
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 	"unicode"
 
@@ -152,4 +153,88 @@ func TestInput_ConsumeWhenMatchesRegexp(t *testing.T) {
 		################################################################################
 		"◊ foo"
 		`)
+}
+
+func TestInput_Line(t *testing.T) {
+	t.Run("single line", func(t *testing.T) {
+		s := `only one line`
+		in := NewInput(s)
+		c := ic.New(t)
+
+		c.PrintSection("start")
+		c.Println(in.Line())
+
+		c.PrintSection(`seek to "one"`)
+		in.Seek(strings.Index(s, "one"))
+		c.Println(in.Line())
+
+		c.PrintSection("seek to end")
+		in.Seek(len(s))
+		c.Println(in.Line())
+
+		c.Expect(`
+			################################################################################
+			# start
+			################################################################################
+			1
+			################################################################################
+			# seek to "one"
+			################################################################################
+			1
+			################################################################################
+			# seek to end
+			################################################################################
+			1
+			`)
+	})
+	t.Run("multi line", func(t *testing.T) {
+		s := `
+this is line 1
+this is line 2
+this is line 3`[1:]
+		in := NewInput(s)
+		c := ic.New(t)
+
+		c.PrintSection("start")
+		c.PVWN("Line", in.Line())
+		c.PVWN("Rest", in.Rest())
+
+		c.PrintSection(`seek to first newline`)
+		in.Seek(strings.Index(s, "\nthis is line 2"))
+		c.PVWN("Line", in.Line())
+		c.PVWN("Rest", in.Rest())
+
+		c.PrintSection(`seek to "one"`)
+		in.Seek(strings.Index(s, "line 2"))
+		c.PVWN("Line", in.Line())
+		c.PVWN("Rest", in.Rest())
+
+		c.PrintSection("seek to end")
+		in.Seek(len(s))
+		c.PVWN("Line", in.Line())
+		c.PVWN("Rest", in.Rest())
+
+		c.Expect(`
+			################################################################################
+			# start
+			################################################################################
+			Line: 1
+			Rest: "this is line 1\nthis is line 2\nthis is line 3"
+			################################################################################
+			# seek to first newline
+			################################################################################
+			Line: 1
+			Rest: "\nthis is line 2\nthis is line 3"
+			################################################################################
+			# seek to "one"
+			################################################################################
+			Line: 2
+			Rest: "line 2\nthis is line 3"
+			################################################################################
+			# seek to end
+			################################################################################
+			Line: 3
+			Rest: ""
+			`)
+	})
 }
