@@ -3,7 +3,7 @@ package input
 import "fmt"
 
 type Pos struct {
-	idx, Row, Col int
+	Idx, Row, Col int
 }
 
 func (p Pos) String() string {

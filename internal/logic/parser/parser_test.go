@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/BestFriendChris/go-ic/ic"
+	"github.com/BestFriendChris/lozenge_template/input"
 	"github.com/BestFriendChris/lozenge_template/interfaces"
 	"github.com/BestFriendChris/lozenge_template/internal/logic/macro/macro_if"
 	"github.com/BestFriendChris/lozenge_template/internal/logic/token"
@@ -13,12 +14,19 @@ import (
 
 func TestParser_Parse(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
+		in := input.NewInput(`
+input "fmt"
+val := 1
+foo = 
+val
+
+`[1:])
 		toks := []*token.Token{
-			token.NewToken(token.TTcodeGlobalBlock, `input "fmt"`),
-			token.NewToken(token.TTcodeLocalBlock, "val := 1"),
-			token.NewToken(token.TTcontent, "foo = "),
-			token.NewToken(token.TTcodeLocalExpr, "val"),
-			token.NewToken(token.TTcontent, "\n"),
+			token.NewTokenSlice(token.TTcodeGlobalBlock, in.SliceAt(0, 11)).ToToken(),
+			token.NewTokenSlice(token.TTcodeLocalBlock, in.SliceAt(12, 20)).ToToken(),
+			token.NewTokenSlice(token.TTcontent, in.SliceAt(21, 27)).ToToken(),
+			token.NewTokenSlice(token.TTcodeLocalExpr, in.SliceAt(28, 31)).ToToken(),
+			token.NewTokenSlice(token.TTcontent, in.SliceAt(31, 32)).ToToken(),
 		}
 		h := &testHandler{}
 		_, _ = New(nil).Parse(h, toks)
@@ -42,15 +50,24 @@ func TestParser_Parse(t *testing.T) {
 			`)
 	})
 	t.Run("with macros", func(t *testing.T) {
+		in := input.NewInput(`
+input "fmt"
+val := 1
+if val == 1 {
+foo = 
+val
+
+}`[1:])
+
 		toks := []*token.Token{
-			token.NewToken(token.TTcodeGlobalBlock, `input "fmt"`),
-			token.NewToken(token.TTcodeLocalBlock, "val := 1"),
-			token.NewToken(token.TTmacro, "if"),
-			token.NewToken(token.TTcodeLocalBlock, "if val == 1 {"),
-			token.NewToken(token.TTcontent, "foo = "),
-			token.NewToken(token.TTcodeLocalExpr, "val"),
-			token.NewToken(token.TTcontent, "\n"),
-			token.NewToken(token.TTcodeLocalBlock, "}"),
+			token.NewTokenSlice(token.TTcodeGlobalBlock, in.SliceAt(0, 11)).ToToken(),
+			token.NewTokenSlice(token.TTcodeLocalBlock, in.SliceAt(12, 20)).ToToken(),
+			token.NewTokenSlice(token.TTmacro, in.SliceAt(21, 23)).ToToken(),
+			token.NewTokenSlice(token.TTcodeLocalBlock, in.SliceAt(21, 34)).ToToken(),
+			token.NewTokenSlice(token.TTcontent, in.SliceAt(35, 41)).ToToken(),
+			token.NewTokenSlice(token.TTcodeLocalExpr, in.SliceAt(42, 45)).ToToken(),
+			token.NewTokenSlice(token.TTcontent, in.SliceAt(46, 47)).ToToken(),
+			token.NewTokenSlice(token.TTcodeLocalBlock, in.SliceAt(47, 48)).ToToken(),
 		}
 		h := &testHandler{}
 		macros := interfaces.NewMacros()

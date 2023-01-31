@@ -34,15 +34,45 @@ func (m MacroFor) NextTokens(ct interfaces.ContentTokenizer, in *input.Input) (t
 	for _, subToken := range subTokens {
 		tokens = append(tokens, subToken)
 	}
-	in.Shift('◊')
-	in.Shift('}')
+	in.ShiftSlc('◊')
 
-	tokens = append(tokens, token.NewToken(token.TTcodeLocalBlock, "}"))
+	tok = token.NewTokenSlice(token.TTcodeLocalBlock, in.ShiftSlc('}')).ToToken()
+	tokens = append(tokens, tok)
+
+	return tokens, nil
+}
+
+func (m MacroFor) NextTokensSlc(ct interfaces.ContentTokenizerSlc, in *input.Input) (toks []*token.TokenSlice, err error) {
+	tokens := make([]*token.TokenSlice, 0)
+
+	var tok *token.TokenSlice
+	tok, err = ct.NextTokenCodeUntilOpenBraceLozSlc(in)
+	if err != nil {
+		return nil, err
+	}
+	tokens = append(tokens, tok)
+
+	var subTokens []*token.TokenSlice
+	subTokens, err = ct.ReadTokensUntilSlc(in, "◊}")
+	if err != nil {
+		return nil, err
+	}
+	for _, subToken := range subTokens {
+		tokens = append(tokens, subToken)
+	}
+	in.ShiftSlc('◊')
+
+	tok = token.NewTokenSlice(token.TTcodeLocalBlock, in.ShiftSlc('}'))
+	tokens = append(tokens, tok)
 
 	return tokens, nil
 }
 
 func (m MacroFor) Parse(_ interfaces.TemplateHandler, toks []*token.Token) (rest []*token.Token, err error) {
 	// No extra work to do
+	return toks, nil
+}
+
+func (m MacroFor) ParseSlc(_ interfaces.TemplateHandler, toks []*token.TokenSlice) (rest []*token.TokenSlice, err error) {
 	return toks, nil
 }

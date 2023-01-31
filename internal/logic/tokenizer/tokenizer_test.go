@@ -897,6 +897,22 @@ func (m simpleMacro) NextTokens(ct interfaces.ContentTokenizer, in *input.Input)
 	return []*token.Token{contentToken, valTok}, nil
 }
 
+func (m simpleMacro) NextTokensSlc(ct interfaces.ContentTokenizerSlc, in *input.Input) (toks []*token.TokenSlice, err error) {
+	_ = in.ConsumeString(m.Name())
+	var valTok *token.TokenSlice
+	valTok, err = ct.ParseGoCodeFromToSlc(in, token.TTcodeLocalExpr, '(', ')', true)
+	if err != nil {
+		return nil, err
+	}
+	contentSlc := input.NewSlice(valTok.Slc.S, valTok.Slc.Start, valTok.Slc.End)
+	contentToken := token.NewTokenSlice(token.TTcontent, contentSlc)
+	return []*token.TokenSlice{contentToken, valTok}, nil
+}
+
 func (m simpleMacro) Parse(_ interfaces.TemplateHandler, toks []*token.Token) (rest []*token.Token, err error) {
+	return toks, nil
+}
+
+func (m simpleMacro) ParseSlc(_ interfaces.TemplateHandler, toks []*token.TokenSlice) (rest []*token.TokenSlice, err error) {
 	return toks, nil
 }

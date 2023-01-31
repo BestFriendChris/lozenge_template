@@ -60,8 +60,35 @@ func (i *Input) Rest() string {
 	return i.str[i.idx:]
 }
 
+func (i *Input) RestSlc() Slice {
+	return i.SliceAt(i.idx, len(i.str))
+}
+
 func (i *Input) Pos() Pos {
 	return Pos{i.idx, i.lineNo, i.col()}
+}
+
+func (i *Input) PosAt(idx int) Pos {
+	line, col := i.findLineAndCol(idx)
+	return Pos{idx, line, col}
+}
+
+func (i *Input) SliceOffset(offset int) Slice {
+	var from, to int
+	if offset < 0 {
+		from, to = i.idx+offset, i.idx
+	} else {
+		from, to = i.idx, i.idx+offset
+	}
+	return i.SliceAt(from, to)
+}
+
+func (i *Input) SliceAt(from, to int) Slice {
+	return Slice{
+		S:     i.str[from:to],
+		Start: i.PosAt(from),
+		End:   i.PosAt(to),
+	}
 }
 
 func (i *Input) Consumed() bool {
@@ -98,6 +125,17 @@ func (i *Input) ConsumeRegexp(r *regexp.Regexp) (string, bool) {
 	}
 }
 
+func (i *Input) ConsumeRegexpSlc(r *regexp.Regexp) (Slice, bool) {
+	found := r.FindIndex([]byte(i.Rest()))
+	if found != nil && found[0] == 0 {
+		match := i.SliceOffset(found[1])
+		i.SeekOffset(found[1])
+		return match, true
+	} else {
+		return EmptySlice(), false
+	}
+}
+
 func (i *Input) HasPrefix(prefix string) bool {
 	return strings.HasPrefix(i.Rest(), prefix)
 }
@@ -127,6 +165,19 @@ func (i *Input) Shift(expected rune) {
 	i.SeekOffset(utf8.RuneLen(r))
 }
 
+func (i *Input) ShiftSlc(expected rune) Slice {
+	r, found := i.Peek()
+	if !found {
+		panic("nothing to skip")
+	}
+	if r != expected {
+		panic(fmt.Sprintf("unable to skip '%c' (found '%c')", expected, r))
+	}
+	s := i.SliceOffset(1)
+	i.SeekOffset(utf8.RuneLen(r))
+	return s
+}
+
 func (i *Input) Unshift(expected rune) {
 	i.UnshiftString(string(expected))
 }
@@ -136,6 +187,13 @@ func (i *Input) UnshiftString(expected string) {
 		panic(fmt.Sprintf("unable to unshift %q: (found %q)", expected, i.str[i.idx-(len(expected)):i.idx]))
 	}
 	i.SeekOffset(-len(expected))
+}
+
+func (i *Input) UnshiftSlice(expected Slice) {
+	if !strings.HasSuffix(i.str[:i.idx], expected.S) {
+		panic(fmt.Sprintf("unable to unshift %q: (found %q)", expected, i.str[i.idx-(expected.Len()):i.idx]))
+	}
+	i.SeekOffset(-expected.Len())
 }
 
 func (i *Input) ErrorHere(err error) error {
@@ -151,6 +209,18 @@ func (i *Input) ReadWhile(f func(r rune) bool) string {
 			i.Shift(r)
 		} else {
 			return sb.String()
+		}
+	}
+}
+
+func (i *Input) ReadWhileSlc(f func(r rune) bool) Slice {
+	from := i.idx
+	for {
+		r, found := i.Peek()
+		if found && f(r) {
+			i.Shift(r)
+		} else {
+			return i.SliceAt(from, i.idx)
 		}
 	}
 }
@@ -181,6 +251,37 @@ func (i *Input) TryReadWhile(f func(r rune, last bool) (bool, error)) (string, e
 	return sb.String(), nil
 }
 
+func (i *Input) TryReadWhileSlc(f func(r rune, last bool) (bool, error)) (Slice, error) {
+	startIdx := i.idx
+	for {
+		r, found := i.Peek()
+		if !found {
+			break
+		}
+		test, err := f(r, i.isLast())
+		if err != nil {
+			i.Seek(startIdx)
+			return EmptySlice(), i.ErrorHere(err)
+		}
+		if test {
+			i.Shift(r)
+		} else {
+			break
+		}
+		if i.Rest() == "" {
+			break
+		}
+	}
+	return i.SliceAt(startIdx, i.idx), nil
+}
+
+func (i *Input) TrimSliceSuffix(slc Slice, suffix string) Slice {
+	if !strings.HasSuffix(slc.S, suffix) {
+		return slc
+	}
+	return i.SliceAt(slc.Start.Idx, slc.End.Idx-len(suffix))
+}
+
 func (i *Input) isLast() bool {
 	_, size := utf8.DecodeRuneInString(i.Rest())
 	return len(i.str)-size == i.idx
@@ -207,4 +308,24 @@ func (i *Input) col() int {
 		leftIdx = i.lineIdx[i.lineNo-2]
 	}
 	return (i.idx - leftIdx) + 1
+}
+
+func (i *Input) findLineAndCol(idx int) (line, col int) {
+	line, col = -1, -1
+	for lineNo, endIdx := range i.lineIdx {
+		if idx <= endIdx {
+			line = lineNo + 1
+			break
+		}
+	}
+	if line == -1 {
+		panic(fmt.Sprintf("unable to find line for idx %d", idx))
+	}
+
+	var leftIdx int
+	if line > 1 {
+		leftIdx = i.lineIdx[line-2]
+	}
+	col = (idx - leftIdx) + 1
+	return line, col
 }

@@ -3,7 +3,9 @@ package interfaces
 type Macro interface {
 	Name() string
 	Tokenizer
+	TokenizerSlc
 	Parser
+	ParserSlc
 }
 
 type Macros struct {

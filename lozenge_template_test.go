@@ -85,8 +85,8 @@ Loz-EOL is also ignored ◊`[1:]
 					buf.WriteString(fmt.Sprintf("%v", foo))
 					buf.WriteString(" bar\n<span>")
 					buf.WriteString(fmt.Sprintf("%v", baz_123))
-					buf.WriteString("</span>there\nLoz-space is ignored \"◊ \"\nLoz-newline is also")
-					buf.WriteString(" ignored ◊\nLoz-Loz is also ignored \"◊\"\nLoz-EOL is also ")
+					buf.WriteString("</span>there\nLoz-space is ignored \"◊ \"\nLoz-newline is also ")
+					buf.WriteString("ignored ◊\nLoz-Loz is also ignored \"◊\"\nLoz-EOL is also ")
 					buf.WriteString("ignored ◊")
 					fmt.Print(buf.String())
 				}
@@ -143,8 +143,8 @@ Loz-EOL is also ignored ∆`[1:]
 					buf.WriteString(fmt.Sprintf("%v", foo))
 					buf.WriteString(" bar\n<span>")
 					buf.WriteString(fmt.Sprintf("%v", baz_123))
-					buf.WriteString("</span>there\nLoz-space is ignored \"∆ \"\nLoz-newline is also")
-					buf.WriteString(" ignored ∆\nLoz-Loz is also ignored \"∆\"\nLoz-EOL is also ")
+					buf.WriteString("</span>there\nLoz-space is ignored \"∆ \"\nLoz-newline is also ")
+					buf.WriteString("ignored ∆\nLoz-Loz is also ignored \"∆\"\nLoz-EOL is also ")
 					buf.WriteString("ignored ∆")
 					fmt.Print(buf.String())
 				}
@@ -717,7 +717,7 @@ func TestLozengeTemplate_Generate_errorCases(t *testing.T) {
 			testHandler := &main_handler.MainHandler{}
 			p := New(nil, NewParserConfig())
 
-			_, err := p.Generate(testHandler, s)
+			_, err := p.GenerateSlc(testHandler, s)
 
 			c := ic.New(t)
 			c.PrintSection("error")
@@ -750,7 +750,7 @@ func GenerateWithTestHandlerWithMacrosWithConfig(t testing.TB, s string, overrid
 	testHandler := &main_handler.MainHandler{}
 	p := New(overrideMacros, config)
 
-	output, e := p.Generate(testHandler, s)
+	output, e := p.GenerateSlc(testHandler, s)
 	if e != nil {
 		t.Fatalf("generate error: %q", e)
 	}
@@ -811,6 +811,22 @@ func (m LogValue) NextTokens(ct interfaces.ContentTokenizer, in *input.Input) (t
 	return []*token.Token{contentToken, valTok}, nil
 }
 
+func (m LogValue) NextTokensSlc(ct interfaces.ContentTokenizerSlc, in *input.Input) (toks []*token.TokenSlice, err error) {
+	_ = in.ConsumeString(m.Name())
+	var valTok *token.TokenSlice
+	valTok, err = ct.ParseGoCodeFromToSlc(in, token.TTcodeLocalExpr, '(', ')', true)
+	if err != nil {
+		return nil, err
+	}
+	contentSlc := input.NewSlice(fmt.Sprintf("%s = ", valTok.Slc.S), valTok.Slc.Start, valTok.Slc.End)
+	contentToken := token.NewTokenSlice(token.TTcontent, contentSlc)
+	return []*token.TokenSlice{contentToken, valTok}, nil
+}
+
 func (m LogValue) Parse(_ interfaces.TemplateHandler, toks []*token.Token) (rest []*token.Token, err error) {
+	return toks, nil
+}
+
+func (m LogValue) ParseSlc(_ interfaces.TemplateHandler, toks []*token.TokenSlice) (rest []*token.TokenSlice, err error) {
 	return toks, nil
 }

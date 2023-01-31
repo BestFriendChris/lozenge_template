@@ -82,13 +82,81 @@ func (m *MacroIf) NextTokens(ct interfaces.ContentTokenizer, in *input.Input) (t
 		in.Shift('◊')
 	}
 
-	in.Shift('}')
-	tokens = append(tokens, token.NewToken(token.TTcodeLocalBlock, "}"))
+	tok = token.NewTokenSlice(token.TTcodeLocalBlock, in.ShiftSlc('}')).ToToken()
+	tokens = append(tokens, tok)
+
+	return tokens, nil
+}
+
+func (m *MacroIf) NextTokensSlc(ct interfaces.ContentTokenizerSlc, in *input.Input) (toks []*token.TokenSlice, err error) {
+	tokens := make([]*token.TokenSlice, 0)
+
+	var tok *token.TokenSlice
+	tok, err = ct.NextTokenCodeUntilOpenBraceLozSlc(in)
+	if err != nil {
+		return nil, err
+	}
+	tokens = append(tokens, tok)
+
+	var subTokens []*token.TokenSlice
+	subTokens, err = ct.ReadTokensUntilSlc(in, "◊}")
+	if err != nil {
+		return nil, err
+	}
+	for _, subToken := range subTokens {
+		tokens = append(tokens, subToken)
+	}
+	in.Shift('◊')
+	for {
+		found := in.HasPrefixRegexp(elseIfRegex)
+		if !found {
+			break
+		}
+		tok, err = ct.NextTokenCodeUntilOpenBraceLozSlc(in)
+		if err != nil {
+			return nil, err
+		}
+		tokens = append(tokens, tok)
+
+		subTokens, err = ct.ReadTokensUntilSlc(in, "◊}")
+		if err != nil {
+			return nil, err
+		}
+		for _, subToken := range subTokens {
+			tokens = append(tokens, subToken)
+		}
+		in.Shift('◊')
+	}
+
+	found := in.HasPrefixRegexp(elseRegex)
+	if found {
+		tok, err = ct.NextTokenCodeUntilOpenBraceLozSlc(in)
+		if err != nil {
+			return nil, err
+		}
+		tokens = append(tokens, tok)
+
+		subTokens, err = ct.ReadTokensUntilSlc(in, "◊}")
+		if err != nil {
+			return nil, err
+		}
+		for _, subToken := range subTokens {
+			tokens = append(tokens, subToken)
+		}
+		in.Shift('◊')
+	}
+
+	tok = token.NewTokenSlice(token.TTcodeLocalBlock, in.ShiftSlc('}'))
+	tokens = append(tokens, tok)
 
 	return tokens, nil
 }
 
 func (m *MacroIf) Parse(_ interfaces.TemplateHandler, toks []*token.Token) (rest []*token.Token, err error) {
 	// No extra work to do
+	return toks, nil
+}
+
+func (m *MacroIf) ParseSlc(_ interfaces.TemplateHandler, toks []*token.TokenSlice) (rest []*token.TokenSlice, err error) {
 	return toks, nil
 }
