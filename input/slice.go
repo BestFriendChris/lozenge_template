@@ -1,6 +1,9 @@
 package input
 
-import "unicode/utf8"
+import (
+	"fmt"
+	"unicode/utf8"
+)
 
 type Slice struct {
 	S          string
@@ -19,7 +22,7 @@ func NewSlice(s string, start Pos, end Pos) Slice {
 }
 
 func (slc Slice) String() string {
-	return slc.S
+	return fmt.Sprintf("%q", slc.S)
 }
 
 func (slc Slice) Join(other Slice) Slice {

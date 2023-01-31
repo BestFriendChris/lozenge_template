@@ -27,8 +27,7 @@ for _, v := range vals {◊
 		rest := in.Rest()
 
 		c := ic.New(t)
-		c.PrintSection("tokens")
-		c.PT(tokens)
+		printTokensTable(c, tokens)
 
 		c.PrintSection("rest")
 		c.Println(rest)
@@ -115,4 +114,18 @@ for _, v := range vals {◊
 			        └── did not find "◊}"
 			`)
 	})
+}
+
+func printTokensTable(c *ic.IC, tokens []*token.Token) {
+	c.PrintSection("tokens")
+	type tokensTable struct {
+		TT token.TokenType
+		S  string
+		E  *any
+	}
+	tt := make([]tokensTable, len(tokens))
+	for i, toks := range tokens {
+		tt[i] = tokensTable{toks.TT, toks.Slc.S, toks.E}
+	}
+	c.PT(tt)
 }

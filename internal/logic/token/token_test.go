@@ -1,6 +1,7 @@
 package token
 
 import (
+	"github.com/BestFriendChris/lozenge_template/input"
 	"testing"
 
 	"github.com/BestFriendChris/go-ic/ic"
@@ -9,15 +10,18 @@ import (
 func TestToken_String(t *testing.T) {
 	c := ic.New(t)
 
+	mkSlc := func(s string) input.Slice {
+		return input.Slice{S: s}
+	}
 	var data any = "extra-data"
 	c.PT([]struct {
 		Name string
 		Tok  *Token
 	}{
-		{"with S no E", &Token{TTnl, "\n", nil}},
-		{"no S no E", &Token{TTcustom, "", nil}},
-		{"with S with E", &Token{TTcustom, "foo", &data}},
-		{"no S with E", &Token{TTcustom, "", &data}},
+		{"with S no E", &Token{TTnl, mkSlc("\n"), nil}},
+		{"no S no E", &Token{TTcustom, mkSlc(""), nil}},
+		{"with S with E", &Token{TTcustom, mkSlc("foo"), &data}},
+		{"no S with E", &Token{TTcustom, mkSlc(""), &data}},
 	})
 
 	c.Expect(`
@@ -43,7 +47,7 @@ func TestNewTokenMarker(t *testing.T) {
 		# NewTokenMarker has empty .S field
 		################################################################################
 		Token.TT: TT.Custom
-		Token.S: ""
+		Token.Slc: ""
 		Token.E: 
 		`)
 }

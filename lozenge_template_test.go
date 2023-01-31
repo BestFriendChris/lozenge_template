@@ -717,7 +717,7 @@ func TestLozengeTemplate_Generate_errorCases(t *testing.T) {
 			testHandler := &main_handler.MainHandler{}
 			p := New(nil, NewParserConfig())
 
-			_, err := p.GenerateSlc(testHandler, s)
+			_, err := p.Generate(testHandler, s)
 
 			c := ic.New(t)
 			c.PrintSection("error")
@@ -750,7 +750,7 @@ func GenerateWithTestHandlerWithMacrosWithConfig(t testing.TB, s string, overrid
 	testHandler := &main_handler.MainHandler{}
 	p := New(overrideMacros, config)
 
-	output, e := p.GenerateSlc(testHandler, s)
+	output, e := p.Generate(testHandler, s)
 	if e != nil {
 		t.Fatalf("generate error: %q", e)
 	}
@@ -807,26 +807,11 @@ func (m LogValue) NextTokens(ct interfaces.ContentTokenizer, in *input.Input) (t
 	if err != nil {
 		return nil, err
 	}
-	contentToken := token.NewToken(token.TTcontent, fmt.Sprintf("%s = ", valTok.S))
+	contentSlc := input.NewSlice(fmt.Sprintf("%s = ", valTok.Slc.S), valTok.Slc.Start, valTok.Slc.End)
+	contentToken := token.NewToken(token.TTcontent, contentSlc)
 	return []*token.Token{contentToken, valTok}, nil
 }
 
-func (m LogValue) NextTokensSlc(ct interfaces.ContentTokenizerSlc, in *input.Input) (toks []*token.TokenSlice, err error) {
-	_ = in.ConsumeString(m.Name())
-	var valTok *token.TokenSlice
-	valTok, err = ct.ParseGoCodeFromToSlc(in, token.TTcodeLocalExpr, '(', ')', true)
-	if err != nil {
-		return nil, err
-	}
-	contentSlc := input.NewSlice(fmt.Sprintf("%s = ", valTok.Slc.S), valTok.Slc.Start, valTok.Slc.End)
-	contentToken := token.NewTokenSlice(token.TTcontent, contentSlc)
-	return []*token.TokenSlice{contentToken, valTok}, nil
-}
-
 func (m LogValue) Parse(_ interfaces.TemplateHandler, toks []*token.Token) (rest []*token.Token, err error) {
-	return toks, nil
-}
-
-func (m LogValue) ParseSlc(_ interfaces.TemplateHandler, toks []*token.TokenSlice) (rest []*token.TokenSlice, err error) {
 	return toks, nil
 }

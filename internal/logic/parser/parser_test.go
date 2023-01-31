@@ -22,11 +22,11 @@ val
 
 `[1:])
 		toks := []*token.Token{
-			token.NewTokenSlice(token.TTcodeGlobalBlock, in.SliceAt(0, 11)).ToToken(),
-			token.NewTokenSlice(token.TTcodeLocalBlock, in.SliceAt(12, 20)).ToToken(),
-			token.NewTokenSlice(token.TTcontent, in.SliceAt(21, 27)).ToToken(),
-			token.NewTokenSlice(token.TTcodeLocalExpr, in.SliceAt(28, 31)).ToToken(),
-			token.NewTokenSlice(token.TTcontent, in.SliceAt(31, 32)).ToToken(),
+			token.NewToken(token.TTcodeGlobalBlock, in.SliceAt(0, 11)),
+			token.NewToken(token.TTcodeLocalBlock, in.SliceAt(12, 20)),
+			token.NewToken(token.TTcontent, in.SliceAt(21, 27)),
+			token.NewToken(token.TTcodeLocalExpr, in.SliceAt(28, 31)),
+			token.NewToken(token.TTcontent, in.SliceAt(31, 32)),
 		}
 		h := &testHandler{}
 		_, _ = New(nil).Parse(h, toks)
@@ -60,14 +60,14 @@ val
 }`[1:])
 
 		toks := []*token.Token{
-			token.NewTokenSlice(token.TTcodeGlobalBlock, in.SliceAt(0, 11)).ToToken(),
-			token.NewTokenSlice(token.TTcodeLocalBlock, in.SliceAt(12, 20)).ToToken(),
-			token.NewTokenSlice(token.TTmacro, in.SliceAt(21, 23)).ToToken(),
-			token.NewTokenSlice(token.TTcodeLocalBlock, in.SliceAt(21, 34)).ToToken(),
-			token.NewTokenSlice(token.TTcontent, in.SliceAt(35, 41)).ToToken(),
-			token.NewTokenSlice(token.TTcodeLocalExpr, in.SliceAt(42, 45)).ToToken(),
-			token.NewTokenSlice(token.TTcontent, in.SliceAt(46, 47)).ToToken(),
-			token.NewTokenSlice(token.TTcodeLocalBlock, in.SliceAt(47, 48)).ToToken(),
+			token.NewToken(token.TTcodeGlobalBlock, in.SliceAt(0, 11)),
+			token.NewToken(token.TTcodeLocalBlock, in.SliceAt(12, 20)),
+			token.NewToken(token.TTmacro, in.SliceAt(21, 23)),
+			token.NewToken(token.TTcodeLocalBlock, in.SliceAt(21, 34)),
+			token.NewToken(token.TTcontent, in.SliceAt(35, 41)),
+			token.NewToken(token.TTcodeLocalExpr, in.SliceAt(42, 45)),
+			token.NewToken(token.TTcontent, in.SliceAt(46, 47)),
+			token.NewToken(token.TTcodeLocalBlock, in.SliceAt(47, 48)),
 		}
 		h := &testHandler{}
 		macros := interfaces.NewMacros()

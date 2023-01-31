@@ -1,6 +1,7 @@
 package tokenizer
 
 import (
+	"github.com/BestFriendChris/lozenge_template/input"
 	"testing"
 
 	"github.com/BestFriendChris/go-ic/ic"
@@ -18,7 +19,7 @@ func TestOptimize_noTrimSpaces(t *testing.T) {
 		optimized := Optimize(toks, false)
 		c.PT(optimized)
 		c.Expect(`
-			   | TT         | S         | E |
+			   | TT         | Slc       | E |
 			---+------------+-----------+---+
 			 1 | TT.Content | "foo-bar" |   |
 			---+------------+-----------+---+
@@ -35,7 +36,7 @@ func TestOptimize_noTrimSpaces(t *testing.T) {
 		optimized := Optimize(toks, false)
 		c.PT(optimized)
 		c.Expect(`
-			   | TT         | S                                                              | E |
+			   | TT         | Slc                                                            | E |
 			---+------------+----------------------------------------------------------------+---+
 			 1 | TT.Content | "123456789012345678901234567890123456789012345678901234567890" |   |
 			---+------------+----------------------------------------------------------------+---+
@@ -55,7 +56,7 @@ func TestOptimize_noTrimSpaces(t *testing.T) {
 		optimized := Optimize(toks, false)
 		c.PT(optimized)
 		c.Expect(`
-			   | TT         | S              | E |
+			   | TT         | Slc            | E |
 			---+------------+----------------+---+
 			 1 | TT.Content | "  foo\n\tbar" |   |
 			---+------------+----------------+---+
@@ -78,7 +79,7 @@ func TestOptimize_noTrimSpaces(t *testing.T) {
 		optimized := Optimize(toks, false)
 		c.PT(optimized)
 		c.Expect(`
-			   | TT                 | S                     | E |
+			   | TT                 | Slc                   | E |
 			---+--------------------+-----------------------+---+
 			 1 | TT.Content         | "  "                  |   |
 			---+--------------------+-----------------------+---+
@@ -118,7 +119,7 @@ func TestOptimize_noTrimSpaces(t *testing.T) {
 		optimized := Optimize(toks, false)
 		c.PT(optimized)
 		c.Expect(`
-			   | TT                 | S                | E |
+			   | TT                 | Slc              | E |
 			---+--------------------+------------------+---+
 			 1 | TT.Content         | "  foo"          |   |
 			---+--------------------+------------------+---+
@@ -156,7 +157,7 @@ func TestOptimize_noTrimSpaces(t *testing.T) {
 		optimized := Optimize(toks, false)
 		c.PT(optimized)
 		c.Expect(`
-			   | TT                 | S                     | E |
+			   | TT                 | Slc                   | E |
 			---+--------------------+-----------------------+---+
 			 1 | TT.Content         | "  foo"               |   |
 			---+--------------------+-----------------------+---+
@@ -203,7 +204,7 @@ func TestOptimize_trimSpaces(t *testing.T) {
 		optimized := Optimize(toks, true)
 		c.PT(optimized)
 		c.Expect(`
-			   | TT                 | S                                     | E |
+			   | TT                 | Slc                                   | E |
 			---+--------------------+---------------------------------------+---+
 			 1 | TT.CodeGlobalBlock | "import \"foo\"\nimport \"bar\""      |   |
 			---+--------------------+---------------------------------------+---+
@@ -238,7 +239,7 @@ func TestOptimize_trimSpaces(t *testing.T) {
 		optimized := Optimize(toks, true)
 		c.PT(optimized)
 		c.Expect(`
-			   | TT                 | S                | E |
+			   | TT                 | Slc              | E |
 			---+--------------------+------------------+---+
 			 1 | TT.Content         | "  foo"          |   |
 			---+--------------------+------------------+---+
@@ -278,7 +279,7 @@ func TestOptimize_trimSpaces(t *testing.T) {
 		optimized := Optimize(toks, true)
 		c.PT(optimized)
 		c.Expect(`
-			   | TT                 | S                     | E |
+			   | TT                 | Slc                   | E |
 			---+--------------------+-----------------------+---+
 			 1 | TT.Content         | "  foo"               |   |
 			---+--------------------+-----------------------+---+
@@ -303,17 +304,17 @@ func TestOptimize_trimSpaces(t *testing.T) {
 }
 
 func contentToken(val string) *token.Token {
-	return &token.Token{TT: token.TTcontent, S: val}
+	return &token.Token{TT: token.TTcontent, Slc: input.Slice{S: val}}
 }
 
 func nlToken(val string) *token.Token {
-	return &token.Token{TT: token.TTnl, S: val}
+	return &token.Token{TT: token.TTnl, Slc: input.Slice{S: val}}
 }
 
 func wsToken(val string) *token.Token {
-	return &token.Token{TT: token.TTws, S: val}
+	return &token.Token{TT: token.TTws, Slc: input.Slice{S: val}}
 }
 
 func mkToken(tt token.TokenType, val string) *token.Token {
-	return &token.Token{TT: tt, S: val}
+	return &token.Token{TT: tt, Slc: input.Slice{S: val}}
 }

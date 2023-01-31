@@ -27,8 +27,7 @@ if reflect.DeepEqual(val, []string{"foo"}) {◊
 		rest = in.Rest()
 
 		c := ic.New(t)
-		c.PrintSection("tokens")
-		c.PT(tokens)
+		printTokensTable(c, tokens)
 
 		c.PrintSection("rest")
 		c.Println(rest)
@@ -75,8 +74,7 @@ if true {◊
 		rest = in.Rest()
 
 		c := ic.New(t)
-		c.PrintSection("tokens")
-		c.PT(tokens)
+		printTokensTable(c, tokens)
 
 		c.PrintSection("rest")
 		c.Println(rest)
@@ -139,8 +137,7 @@ if v == 1 {◊
 		rest = in.Rest()
 
 		c := ic.New(t)
-		c.PrintSection("tokens")
-		c.PT(tokens)
+		printTokensTable(c, tokens)
 
 		c.PrintSection("rest")
 		c.Println(rest)
@@ -202,7 +199,7 @@ if v == 1 {◊
 	})
 }
 
-func TestMacroIf_NextTokens_errorCases(t *testing.T) {
+func TestMacroIf_NextTokensSlc_errorCases(t *testing.T) {
 	t.Run("no open brace with if", func(t *testing.T) {
 		s := `if true `
 		ct := tokenizer.NewDefault(interfaces.NewMacros())
@@ -311,4 +308,18 @@ if v == 1 {◊
 			              └── did not find "◊}"
 			`)
 	})
+}
+
+func printTokensTable(c *ic.IC, tokens []*token.Token) {
+	c.PrintSection("tokens")
+	type tokensTable struct {
+		TT token.TokenType
+		S  string
+		E  *any
+	}
+	tt := make([]tokensTable, len(tokens))
+	for i, toks := range tokens {
+		tt[i] = tokensTable{toks.TT, toks.Slc.S, toks.E}
+	}
+	c.PT(tt)
 }

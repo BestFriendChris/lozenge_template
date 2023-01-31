@@ -22,7 +22,7 @@ func TestInput_ReadWhile(t *testing.T) {
 	c.Printf("%q\n", in.Rest())
 
 	c.PrintSection("ident")
-	c.Printf("%q\n", ident)
+	c.Println(ident)
 	c.Expect(`
 		################################################################################
 		# Rest
@@ -58,7 +58,7 @@ func TestInput_TryReadWhile(t *testing.T) {
 		})
 		c := ic.New(t)
 		c.PrintSection("str")
-		c.Printf("%q\n", str)
+		c.Println(str)
 
 		c.PrintSection("err")
 		c.Printf("%s\n", err)
@@ -103,7 +103,7 @@ func TestInput_TryReadWhile(t *testing.T) {
 		})
 		c := ic.New(t)
 		c.PrintSection("str")
-		c.Printf("%q\n", str)
+		c.Println(str)
 
 		c.PrintSection("err")
 		c.Printf("%s\n", err)
@@ -147,7 +147,7 @@ func TestInput_ConsumeWhenMatchesRegexp(t *testing.T) {
 		################################################################################
 		# match
 		################################################################################
-		}   else {
+		"}   else {"
 		################################################################################
 		# rest
 		################################################################################

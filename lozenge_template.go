@@ -52,35 +52,6 @@ func (lt *LozengeTemplate) Generate(h interfaces.TemplateHandler, s string) (goC
 	return go_format.Format(goCode)
 }
 
-func (lt *LozengeTemplate) GenerateSlc(h interfaces.TemplateHandler, s string) (goCode string, err error) {
-	macros := lt.defaultMacros.Merge(h.DefaultMacros())
-
-	ct := tokenizer.New(lt.config.Loz, macros)
-
-	var toks []*token.TokenSlice
-
-	in := input.NewInput(s)
-	toks, err = ct.ReadAllSlc(in)
-	if err != nil {
-		return "", err
-	}
-	toks = tokenizer.OptimizeSlc(toks, lt.config.TrimSpaces)
-
-	prs := parser.New(macros)
-	_, err = prs.ParseSlc(h, toks)
-
-	if err != nil {
-		return "", err
-	}
-
-	goCode, err = h.Done()
-	if err != nil {
-		return "", err
-	}
-
-	return go_format.Format(goCode)
-}
-
 func defaultMacros(overrideMacros *interfaces.Macros) *interfaces.Macros {
 	macros := interfaces.NewMacros()
 	macros.Add(macro_if.New())

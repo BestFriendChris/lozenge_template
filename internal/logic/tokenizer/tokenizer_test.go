@@ -29,8 +29,7 @@ DONE
 		tokens, _ := tokenizer.ReadTokensUntil(in, "DONE")
 		rest := in.Rest()
 
-		c.PrintSection("Tokens")
-		c.PT(tokens)
+		logTokens(c, tokens)
 
 		c.PrintSection("Rest")
 		c.Println(rest)
@@ -47,7 +46,7 @@ DONE
 			DONE
 			
 			################################################################################
-			# Tokens
+			# tokens
 			################################################################################
 			   | TT                 | S                  | E |
 			---+--------------------+--------------------+---+
@@ -122,8 +121,7 @@ DONE
 		}
 		rest := in.Rest()
 
-		c.PrintSection("Tokens")
-		c.PT(tokens)
+		logTokens(c, tokens)
 
 		c.PrintSection("Rest")
 		c.Println(rest)
@@ -134,7 +132,7 @@ DONE
 			################################################################################
 			Hi: ◊.SimpleMacro(1 + 2) DONE
 			################################################################################
-			# Tokens
+			# tokens
 			################################################################################
 			   | TT               | S             | E |
 			---+------------------+---------------+---+
@@ -168,8 +166,7 @@ DONE
 		tokens, _ := tokenizer.ReadTokensUntil(in, "")
 		rest := in.Rest()
 
-		c.PrintSection("Tokens")
-		c.PT(tokens)
+		logTokens(c, tokens)
 
 		c.PrintSection("Rest")
 		c.Println(rest)
@@ -181,7 +178,7 @@ DONE
 			################################################################################
 			Hi: ◊.SimpleMacro(1 + 2) DONE
 			################################################################################
-			# Tokens
+			# tokens
 			################################################################################
 			   | TT               | S             | E |
 			---+------------------+---------------+---+
@@ -287,8 +284,8 @@ DONE
 			}
 		}
 
-		c.PrintSection("Tokens")
-		c.PT(tokens)
+		logTokens(c, tokens)
+
 		c.Expect(`
 			################################################################################
 			# Input
@@ -301,7 +298,7 @@ DONE
 			DONE
 			
 			################################################################################
-			# Tokens
+			# tokens
 			################################################################################
 			   | TT                 | S                  | E |
 			---+--------------------+--------------------+---+
@@ -389,8 +386,8 @@ DONE
 			}
 		}
 
-		c.PrintSection("Tokens")
-		c.PT(tokens)
+		logTokens(c, tokens)
+
 		c.Expect(`
 			################################################################################
 			# Input
@@ -403,7 +400,7 @@ DONE
 			DONE
 			
 			################################################################################
-			# Tokens
+			# tokens
 			################################################################################
 			   | TT                 | S                  | E |
 			---+--------------------+--------------------+---+
@@ -474,7 +471,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.WS
-			Token.S: "\t   "
+			Token.Slc: "\t   "
 			Token.E: 
 			################################################################################
 			# rest
@@ -495,7 +492,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.NL
-			Token.S: "\n"
+			Token.Slc: "\n"
 			Token.E: 
 			################################################################################
 			# rest
@@ -514,7 +511,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.Content
-			Token.S: "foo"
+			Token.Slc: "foo"
 			Token.E: 
 			################################################################################
 			# rest
@@ -533,7 +530,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.Content
-			Token.S: "◊"
+			Token.Slc: "◊"
 			Token.E: 
 			################################################################################
 			# rest
@@ -552,7 +549,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.Content
-			Token.S: "◊"
+			Token.Slc: "◊"
 			Token.E: 
 			################################################################################
 			# rest
@@ -571,7 +568,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.Content
-			Token.S: "◊"
+			Token.Slc: "◊"
 			Token.E: 
 			################################################################################
 			# rest
@@ -590,7 +587,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.Content
-			Token.S: "◊"
+			Token.Slc: "◊"
 			Token.E: 
 			################################################################################
 			# rest
@@ -609,7 +606,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.CodeLocalExpr
-			Token.S: "foo"
+			Token.Slc: "foo"
 			Token.E: 
 			################################################################################
 			# rest
@@ -628,7 +625,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.CodeLocalExpr
-			Token.S: "foo"
+			Token.Slc: "foo"
 			Token.E: 
 			################################################################################
 			# rest
@@ -647,7 +644,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.CodeLocalExpr
-			Token.S: "(1 + 2)"
+			Token.Slc: "(1 + 2)"
 			Token.E: 
 			################################################################################
 			# rest
@@ -680,7 +677,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.CodeLocalBlock
-			Token.S: " var foo, bar, baz := struct{a string}{\"}\\\"\"}, '}', '\\'' "
+			Token.Slc: " var foo, bar, baz := struct{a string}{\"}\\\"\"}, '}', '\\'' "
 			Token.E: 
 			################################################################################
 			# rest
@@ -718,7 +715,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.CodeGlobalBlock
-			Token.S: "\n\ttype foo struct{\n\t\ta string\n\t}\n"
+			Token.Slc: "\n\ttype foo struct{\n\t\ta string\n\t}\n"
 			Token.E: 
 			################################################################################
 			# rest
@@ -756,7 +753,7 @@ foo`[1:])
 			# token
 			################################################################################
 			Token.TT: TT.Content
-			Token.S: "◊"
+			Token.Slc: "◊"
 			Token.E: 
 			################################################################################
 			# rest
@@ -807,7 +804,7 @@ func TestContentTokenizer_NextTokenCodeUntilOpenBrace(t *testing.T) {
 			# token
 			################################################################################
 			Token.TT: TT.CodeLocalBlock
-			Token.S: "if strings.DeepEqual(v, []string{\"\\\"\", \"{\"}) {"
+			Token.Slc: "if strings.DeepEqual(v, []string{\"\\\"\", \"{\"}) {"
 			Token.E: 
 			################################################################################
 			# rest
@@ -862,9 +859,18 @@ func logToken(c *ic.IC, t *token.Token) {
 	}
 }
 
-func logTokens(c *ic.IC, toks []*token.Token) {
+func logTokens(c *ic.IC, tokens []*token.Token) {
 	c.PrintSection("tokens")
-	c.PT(toks)
+	type tokensTable struct {
+		TT token.TokenType
+		S  string
+		E  *any
+	}
+	tt := make([]tokensTable, len(tokens))
+	for i, toks := range tokens {
+		tt[i] = tokensTable{toks.TT, toks.Slc.S, toks.E}
+	}
+	c.PT(tt)
 }
 
 func logRest(c *ic.IC, rest string) {
@@ -893,26 +899,11 @@ func (m simpleMacro) NextTokens(ct interfaces.ContentTokenizer, in *input.Input)
 	if err != nil {
 		return nil, err
 	}
-	contentToken := token.NewToken(token.TTcontent, fmt.Sprintf("%s = ", valTok.S))
+	contentSlc := input.NewSlice(fmt.Sprintf("%s = ", valTok.Slc.S), valTok.Slc.Start, valTok.Slc.End)
+	contentToken := token.NewToken(token.TTcontent, contentSlc)
 	return []*token.Token{contentToken, valTok}, nil
 }
 
-func (m simpleMacro) NextTokensSlc(ct interfaces.ContentTokenizerSlc, in *input.Input) (toks []*token.TokenSlice, err error) {
-	_ = in.ConsumeString(m.Name())
-	var valTok *token.TokenSlice
-	valTok, err = ct.ParseGoCodeFromToSlc(in, token.TTcodeLocalExpr, '(', ')', true)
-	if err != nil {
-		return nil, err
-	}
-	contentSlc := input.NewSlice(valTok.Slc.S, valTok.Slc.Start, valTok.Slc.End)
-	contentToken := token.NewTokenSlice(token.TTcontent, contentSlc)
-	return []*token.TokenSlice{contentToken, valTok}, nil
-}
-
 func (m simpleMacro) Parse(_ interfaces.TemplateHandler, toks []*token.Token) (rest []*token.Token, err error) {
-	return toks, nil
-}
-
-func (m simpleMacro) ParseSlc(_ interfaces.TemplateHandler, toks []*token.TokenSlice) (rest []*token.TokenSlice, err error) {
 	return toks, nil
 }
