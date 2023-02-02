@@ -25,7 +25,7 @@ DONE
 		c.Println(inS)
 
 		tokenizer := NewDefault(interfaces.NewMacros())
-		in := input.NewInput(inS)
+		in := input.NewInput("test", inS)
 		tokens, _ := tokenizer.ReadTokensUntil(in, "DONE")
 		rest := in.Rest()
 
@@ -114,7 +114,7 @@ DONE
 		c.Println(s)
 
 		tokenizer := NewDefault(mapOfSimpleMacro())
-		in := input.NewInput(s)
+		in := input.NewInput("test", s)
 		tokens, err := tokenizer.ReadTokensUntil(in, "DONE")
 		if err != nil {
 			panic(err)
@@ -162,7 +162,7 @@ DONE
 		c.Println(s)
 
 		tokenizer := NewDefault(mapOfSimpleMacro())
-		in := input.NewInput(s)
+		in := input.NewInput("test", s)
 		tokens, _ := tokenizer.ReadTokensUntil(in, "")
 		rest := in.Rest()
 
@@ -209,7 +209,7 @@ DONE
 		c.Println(s)
 
 		tokenizer := NewDefault(interfaces.NewMacros())
-		in := input.NewInput(s)
+		in := input.NewInput("test", s)
 		_, err := tokenizer.ReadTokensUntil(in, "DONE")
 
 		c.PrintSection("error")
@@ -233,7 +233,7 @@ DONE
 		c.Println(s)
 
 		tokenizer := NewDefault(interfaces.NewMacros())
-		in := input.NewInput(s)
+		in := input.NewInput("test", s)
 		_, err := tokenizer.ReadTokensUntil(in, "WILL_NOT_FIND")
 
 		c.PrintSection("error")
@@ -272,7 +272,7 @@ DONE
 		var toks []*token.Token
 		tokenizer := NewDefault(interfaces.NewMacros())
 		for {
-			in := input.NewInput(rest)
+			in := input.NewInput("test", rest)
 			toks, _ = tokenizer.NextTokens(in)
 			rest = in.Rest()
 
@@ -375,7 +375,7 @@ DONE
 		var toks []*token.Token
 		tokenizer := New('^', interfaces.NewMacros())
 		for {
-			in := input.NewInput(rest)
+			in := input.NewInput("test", rest)
 			toks, _ = tokenizer.NextTokens(in)
 			rest = in.Rest()
 			for _, tok := range toks {
@@ -471,7 +471,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.WS
-			Token.Slc: "\t   "
+			Token.Slc: test:1 - "\t   "
 			Token.E: 
 			################################################################################
 			# rest
@@ -492,7 +492,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.NL
-			Token.Slc: "\n"
+			Token.Slc: test:1 - "\n"
 			Token.E: 
 			################################################################################
 			# rest
@@ -511,7 +511,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.Content
-			Token.Slc: "foo"
+			Token.Slc: test:1 - "foo"
 			Token.E: 
 			################################################################################
 			# rest
@@ -530,7 +530,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.Content
-			Token.Slc: "◊"
+			Token.Slc: test:1 - "◊"
 			Token.E: 
 			################################################################################
 			# rest
@@ -549,7 +549,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.Content
-			Token.Slc: "◊"
+			Token.Slc: test:1 - "◊"
 			Token.E: 
 			################################################################################
 			# rest
@@ -568,7 +568,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.Content
-			Token.Slc: "◊"
+			Token.Slc: test:1 - "◊"
 			Token.E: 
 			################################################################################
 			# rest
@@ -587,7 +587,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.Content
-			Token.Slc: "◊"
+			Token.Slc: test:1 - "◊"
 			Token.E: 
 			################################################################################
 			# rest
@@ -606,7 +606,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.CodeLocalExpr
-			Token.Slc: "foo"
+			Token.Slc: test:1 - "foo"
 			Token.E: 
 			################################################################################
 			# rest
@@ -625,7 +625,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.CodeLocalExpr
-			Token.Slc: "foo"
+			Token.Slc: test:1 - "foo"
 			Token.E: 
 			################################################################################
 			# rest
@@ -644,7 +644,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.CodeLocalExpr
-			Token.Slc: "(1 + 2)"
+			Token.Slc: test:1 - "(1 + 2)"
 			Token.E: 
 			################################################################################
 			# rest
@@ -677,7 +677,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.CodeLocalBlock
-			Token.Slc: " var foo, bar, baz := struct{a string}{\"}\\\"\"}, '}', '\\'' "
+			Token.Slc: test:1 - " var foo, bar, baz := struct{a string}{\"}\\\"\"}, '}', '\\'' "
 			Token.E: 
 			################################################################################
 			# rest
@@ -715,7 +715,7 @@ DONE
 			# token
 			################################################################################
 			Token.TT: TT.CodeGlobalBlock
-			Token.Slc: "\n\ttype foo struct{\n\t\ta string\n\t}\n"
+			Token.Slc: test:1 - "\n\ttype foo struct{\n\t\ta string\n\t}\n"
 			Token.E: 
 			################################################################################
 			# rest
@@ -753,7 +753,7 @@ foo`[1:])
 			# token
 			################################################################################
 			Token.TT: TT.Content
-			Token.Slc: "◊"
+			Token.Slc: test:1 - "◊"
 			Token.E: 
 			################################################################################
 			# rest
@@ -763,7 +763,7 @@ foo`[1:])
 	})
 	t.Run("◊.macro", func(t *testing.T) {
 		tokenizer := NewDefault(mapOfSimpleMacro())
-		in := input.NewInput(`◊.SimpleMacro(1 + 2)`)
+		in := input.NewInput("test", `◊.SimpleMacro(1 + 2)`)
 		tokens, _ := tokenizer.NextTokens(in)
 		rest := in.Rest()
 
@@ -793,7 +793,7 @@ foo`[1:])
 func TestContentTokenizer_NextTokenCodeUntilOpenBrace(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		tokenizer := NewDefault(interfaces.NewMacros())
-		in := input.NewInput(`if strings.DeepEqual(v, []string{"\"", "{"}) {◊foo`)
+		in := input.NewInput("test", `if strings.DeepEqual(v, []string{"\"", "{"}) {◊foo`)
 		tok, _ := tokenizer.NextTokenCodeUntilOpenBraceLoz(in)
 		rest := in.Rest()
 		c := ic.New(t)
@@ -804,7 +804,7 @@ func TestContentTokenizer_NextTokenCodeUntilOpenBrace(t *testing.T) {
 			# token
 			################################################################################
 			Token.TT: TT.CodeLocalBlock
-			Token.Slc: "if strings.DeepEqual(v, []string{\"\\\"\", \"{\"}) {"
+			Token.Slc: test:1 - "if strings.DeepEqual(v, []string{\"\\\"\", \"{\"}) {"
 			Token.E: 
 			################################################################################
 			# rest
@@ -814,7 +814,7 @@ func TestContentTokenizer_NextTokenCodeUntilOpenBrace(t *testing.T) {
 	})
 	t.Run("no open brace", func(t *testing.T) {
 		tokenizer := NewDefault(interfaces.NewMacros())
-		in := input.NewInput(`if "\"" == "{" ◊} else { foo ◊}`)
+		in := input.NewInput("test", `if "\"" == "{" ◊} else { foo ◊}`)
 		_, err := tokenizer.NextTokenCodeUntilOpenBraceLoz(in)
 		c := ic.New(t)
 		logErr(c, err)
@@ -831,7 +831,7 @@ func TestContentTokenizer_NextTokenCodeUntilOpenBrace(t *testing.T) {
 
 func readNextToken(t *testing.T, s string) (*token.Token, string, error) {
 	tokenizer := NewDefault(mapOfSimpleMacro())
-	in := input.NewInput(s)
+	in := input.NewInput("test", s)
 
 	tokens, err := tokenizer.NextTokens(in)
 	if err != nil {
@@ -893,13 +893,13 @@ func (m simpleMacro) Name() string {
 }
 
 func (m simpleMacro) NextTokens(ct interfaces.ContentTokenizer, in *input.Input) (toks []*token.Token, err error) {
-	_ = in.ConsumeString(m.Name())
+	_, _ = in.ConsumeString(m.Name())
 	var valTok *token.Token
 	valTok, err = ct.ParseGoCodeFromTo(in, token.TTcodeLocalExpr, '(', ')', true)
 	if err != nil {
 		return nil, err
 	}
-	contentSlc := input.NewSlice(fmt.Sprintf("%s = ", valTok.Slc.S), valTok.Slc.Start, valTok.Slc.End)
+	contentSlc := input.NewSlice("test", fmt.Sprintf("%s = ", valTok.Slc.S), valTok.Slc.Start, valTok.Slc.End)
 	contentToken := token.NewToken(token.TTcontent, contentSlc)
 	return []*token.Token{contentToken, valTok}, nil
 }

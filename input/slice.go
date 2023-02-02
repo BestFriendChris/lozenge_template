@@ -6,7 +6,7 @@ import (
 )
 
 type Slice struct {
-	S          string
+	Name, S    string
 	Start, End Pos
 }
 
@@ -14,23 +14,29 @@ func EmptySlice() Slice {
 	return Slice{}
 }
 
-func NewSlice(s string, start Pos, end Pos) Slice {
+func NewSlice(name string, s string, start Pos, end Pos) Slice {
 	if start.Idx > end.Idx {
 		panic("invalid state")
 	}
-	return Slice{S: s, Start: start, End: end}
+	return Slice{Name: name, S: s, Start: start, End: end}
 }
 
 func (slc Slice) String() string {
-	return fmt.Sprintf("%q", slc.S)
+	if slc.Start.Row == 0 {
+		return "<empty slice>"
+	}
+	return fmt.Sprintf("%s:%d - %q", slc.Name, slc.Start.Row, slc.S)
+}
+
+func (slc Slice) CanJoin(other Slice) bool {
+	return slc.Name == other.Name && slc.End.Idx == other.Start.Idx
 }
 
 func (slc Slice) Join(other Slice) Slice {
-	return Slice{
-		S:     slc.S + other.S,
-		Start: slc.Start,
-		End:   other.End,
+	if !slc.CanJoin(other) {
+		panic("unable to join lines")
 	}
+	return NewSlice(slc.Name, slc.S+other.S, slc.Start, other.End)
 }
 
 func (slc Slice) Len() int {

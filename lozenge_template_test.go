@@ -35,7 +35,8 @@ there`[1:]
 				
 				func main() {
 					buf := new(bytes.Buffer)
-					buf.WriteString("hi\nthere")
+					buf.WriteString("hi\n")
+					buf.WriteString("there")
 					fmt.Print(buf.String())
 				}
 				`)
@@ -83,11 +84,15 @@ Loz-EOL is also ignored ◊`[1:]
 					baz_123 := 2
 					buf.WriteString("hi ")
 					buf.WriteString(fmt.Sprintf("%v", foo))
-					buf.WriteString(" bar\n<span>")
+					buf.WriteString(" bar\n")
+					buf.WriteString("<span>")
 					buf.WriteString(fmt.Sprintf("%v", baz_123))
-					buf.WriteString("</span>there\nLoz-space is ignored \"◊ \"\nLoz-newline is also ")
-					buf.WriteString("ignored ◊\nLoz-Loz is also ignored \"◊\"\nLoz-EOL is also ")
-					buf.WriteString("ignored ◊")
+					buf.WriteString("</span>there\n")
+					buf.WriteString("Loz-space is ignored \"◊ \"\n")
+					buf.WriteString("Loz-newline is also ignored ◊\n")
+					buf.WriteString("Loz-Loz is also ignored \"◊")
+					buf.WriteString("\"\n")
+					buf.WriteString("Loz-EOL is also ignored ◊")
 					fmt.Print(buf.String())
 				}
 				`)
@@ -141,11 +146,15 @@ Loz-EOL is also ignored ∆`[1:]
 					baz_123 := 2
 					buf.WriteString("hi ")
 					buf.WriteString(fmt.Sprintf("%v", foo))
-					buf.WriteString(" bar\n<span>")
+					buf.WriteString(" bar\n")
+					buf.WriteString("<span>")
 					buf.WriteString(fmt.Sprintf("%v", baz_123))
-					buf.WriteString("</span>there\nLoz-space is ignored \"∆ \"\nLoz-newline is also ")
-					buf.WriteString("ignored ∆\nLoz-Loz is also ignored \"∆\"\nLoz-EOL is also ")
-					buf.WriteString("ignored ∆")
+					buf.WriteString("</span>there\n")
+					buf.WriteString("Loz-space is ignored \"∆ \"\n")
+					buf.WriteString("Loz-newline is also ignored ∆\n")
+					buf.WriteString("Loz-Loz is also ignored \"∆")
+					buf.WriteString("\"\n")
+					buf.WriteString("Loz-EOL is also ignored ∆")
 					fmt.Print(buf.String())
 				}
 				`)
@@ -224,7 +233,8 @@ Hello ◊foo`[1:]
 				func main() {
 					buf := new(bytes.Buffer)
 					foo := "Chris"
-					buf.WriteString("\nHello ")
+					buf.WriteString("\n")
+					buf.WriteString("Hello ")
 					buf.WriteString(fmt.Sprintf("%v", foo))
 					fmt.Print(buf.String())
 				}
@@ -275,7 +285,8 @@ Hello ◊foo`[1:]
 					buf := new(bytes.Buffer)
 					buf.WriteString("\n")
 					foo := strings.ToUpper(myName())
-					buf.WriteString("\nHello ")
+					buf.WriteString("\n")
+					buf.WriteString("Hello ")
 					buf.WriteString(fmt.Sprintf("%v", foo))
 					fmt.Print(buf.String())
 				}
@@ -362,15 +373,19 @@ DONE`[1:]
 					val := "hi"
 					buf.WriteString("\n")
 					if val != "" {
-						buf.WriteString("\n\t<span>")
+						buf.WriteString("\n")
+						buf.WriteString("\t<span>")
 						buf.WriteString(fmt.Sprintf("%v", val))
 						buf.WriteString("</span>\n")
 					} else if 1 == 0 {
-						buf.WriteString("\n\t<span>impossible</span>\n")
+						buf.WriteString("\n")
+						buf.WriteString("\t<span>impossible</span>\n")
 					} else {
-						buf.WriteString("\n\t<span>default</span>\n")
+						buf.WriteString("\n")
+						buf.WriteString("\t<span>default</span>\n")
 					}
-					buf.WriteString("\nDONE")
+					buf.WriteString("\n")
+					buf.WriteString("DONE")
 					fmt.Print(buf.String())
 				}
 				`)
@@ -463,11 +478,13 @@ DONE`[1:]
 					vals := []string{"a", "b"}
 					buf.WriteString("\n")
 					for _, v := range vals {
-						buf.WriteString("\n\t<span>")
+						buf.WriteString("\n")
+						buf.WriteString("\t<span>")
 						buf.WriteString(fmt.Sprintf("%v", v))
 						buf.WriteString("</span>\n")
 					}
-					buf.WriteString("\nDONE")
+					buf.WriteString("\n")
+					buf.WriteString("DONE")
 					fmt.Print(buf.String())
 				}
 				`)
@@ -575,34 +592,47 @@ DONE
 					vals := []string{"a", "b", "c", "d"}
 					buf.WriteString("\n")
 					for _, v := range vals {
-						buf.WriteString("\n\t")
+						buf.WriteString("\n")
+						buf.WriteString("\t")
 						if v != "c" && v != "d" {
-							buf.WriteString("\n\t\t")
+							buf.WriteString("\n")
+							buf.WriteString("\t\t")
 							if v == "a" {
-								buf.WriteString("\nFOUND A: ")
+								buf.WriteString("\n")
+								buf.WriteString("FOUND A: ")
 								buf.WriteString(fmt.Sprintf("%v", v))
-								buf.WriteString("\n\t\t")
+								buf.WriteString("\n")
+								buf.WriteString("\t\t")
 							} else {
-								buf.WriteString("\nFOUND B: ")
+								buf.WriteString("\n")
+								buf.WriteString("FOUND B: ")
 								buf.WriteString(fmt.Sprintf("%v", v))
-								buf.WriteString("\n\t\t")
+								buf.WriteString("\n")
+								buf.WriteString("\t\t")
 							}
-							buf.WriteString("\n\t")
+							buf.WriteString("\n")
+							buf.WriteString("\t")
 						} else if v == "c" {
-							buf.WriteString("\nFOUND C: ")
+							buf.WriteString("\n")
+							buf.WriteString("FOUND C: ")
 							buf.WriteString(fmt.Sprintf("%v", v))
-							buf.WriteString("\n\t")
+							buf.WriteString("\n")
+							buf.WriteString("\t")
 						} else {
-							buf.WriteString("\nFOUND D: ")
+							buf.WriteString("\n")
+							buf.WriteString("FOUND D: ")
 							buf.WriteString(fmt.Sprintf("%v", v))
-							buf.WriteString("\n\t")
+							buf.WriteString("\n")
+							buf.WriteString("\t")
 						}
 						buf.WriteString("\n")
 					}
-					buf.WriteString("\n\n")
+					buf.WriteString("\n")
+					buf.WriteString("\n")
 					buf.WriteString("(1 + 2) = ")
 					buf.WriteString(fmt.Sprintf("%v", (1 + 2)))
-					buf.WriteString(" bar\nDONE\n")
+					buf.WriteString(" bar\n")
+					buf.WriteString("DONE\n")
 					fmt.Print(buf.String())
 				}
 				`)
@@ -646,7 +676,8 @@ DONE
 					buf.WriteString("\n")
 					buf.WriteString("(1 + 2) = ")
 					buf.WriteString(fmt.Sprintf("%v", (1 + 2)))
-					buf.WriteString(" bar\nDONE\n")
+					buf.WriteString(" bar\n")
+					buf.WriteString("DONE\n")
 					fmt.Print(buf.String())
 				}
 				`)
@@ -801,13 +832,13 @@ func (m LogValue) Name() string {
 }
 
 func (m LogValue) NextTokens(ct interfaces.ContentTokenizer, in *input.Input) (toks []*token.Token, err error) {
-	_ = in.ConsumeString(m.Name())
+	_, _ = in.ConsumeString(m.Name())
 	var valTok *token.Token
 	valTok, err = ct.ParseGoCodeFromTo(in, token.TTcodeLocalExpr, '(', ')', true)
 	if err != nil {
 		return nil, err
 	}
-	contentSlc := input.NewSlice(fmt.Sprintf("%s = ", valTok.Slc.S), valTok.Slc.Start, valTok.Slc.End)
+	contentSlc := input.NewSlice("test", fmt.Sprintf("%s = ", valTok.Slc.S), valTok.Slc.Start, valTok.Slc.End)
 	contentToken := token.NewToken(token.TTcontent, contentSlc)
 	return []*token.Token{contentToken, valTok}, nil
 }

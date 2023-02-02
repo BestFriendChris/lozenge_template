@@ -22,7 +22,7 @@ if reflect.DeepEqual(val, []string{"foo"}) {◊
 		macroIf := New()
 
 		var tokens []*token.Token
-		in := input.NewInput(rest)
+		in := input.NewInput("test", rest)
 		tokens, _ = macroIf.NextTokens(ct, in)
 		rest = in.Rest()
 
@@ -69,7 +69,7 @@ if true {◊
 		macroIf := New()
 
 		var tokens []*token.Token
-		in := input.NewInput(rest)
+		in := input.NewInput("test", rest)
 		tokens, _ = macroIf.NextTokens(ct, in)
 		rest = in.Rest()
 
@@ -132,7 +132,7 @@ if v == 1 {◊
 		macroIf := New()
 
 		var tokens []*token.Token
-		in := input.NewInput(rest)
+		in := input.NewInput("test", rest)
 		tokens, _ = macroIf.NextTokens(ct, in)
 		rest = in.Rest()
 
@@ -205,7 +205,7 @@ func TestMacroIf_NextTokensSlc_errorCases(t *testing.T) {
 		ct := tokenizer.NewDefault(interfaces.NewMacros())
 		macroIf := New()
 
-		in := input.NewInput(s)
+		in := input.NewInput("test", s)
 		_, err := macroIf.NextTokens(ct, in)
 
 		c := ic.New(t)
@@ -232,7 +232,7 @@ if v == 1 {◊
 		ct := tokenizer.NewDefault(interfaces.NewMacros())
 		macroIf := New()
 
-		in := input.NewInput(s)
+		in := input.NewInput("test", s)
 		_, err := macroIf.NextTokens(ct, in)
 
 		c := ic.New(t)
@@ -263,7 +263,7 @@ if v == 1 {◊
 		ct := tokenizer.NewDefault(interfaces.NewMacros())
 		macroIf := New()
 
-		in := input.NewInput(s)
+		in := input.NewInput("test", s)
 		_, err := macroIf.NextTokens(ct, in)
 
 		c := ic.New(t)
@@ -292,7 +292,7 @@ if v == 1 {◊
 		ct := tokenizer.NewDefault(interfaces.NewMacros())
 		macroIf := New()
 
-		in := input.NewInput(s)
+		in := input.NewInput("test", s)
 		_, err := macroIf.NextTokens(ct, in)
 
 		c := ic.New(t)

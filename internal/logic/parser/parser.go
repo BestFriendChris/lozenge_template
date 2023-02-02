@@ -32,7 +32,7 @@ func (p *DefaultParser) Parse(h interfaces.TemplateHandler, toks []*token.Token)
 			h.WriteCodeLocalExpression(tok.Slc.S)
 		case token.TTmacro:
 			if p.macros == nil {
-				return toks, fmt.Errorf("parser: unknown macro %s", tok.Slc.S)
+				return toks, fmt.Errorf("parser: unknown macro %q", tok.Slc.S)
 			}
 			m, found := p.macros.Get(tok.Slc.S)
 			if found {
@@ -41,7 +41,7 @@ func (p *DefaultParser) Parse(h interfaces.TemplateHandler, toks []*token.Token)
 					return rest, err
 				}
 			} else {
-				return toks, fmt.Errorf("parser: unknown macro %s", tok.Slc.S)
+				return toks, fmt.Errorf("parser: unknown macro %q", tok.Slc.S)
 			}
 		default:
 			return toks[i:], fmt.Errorf("parser: unrecognized token type %q: %s", tok.TT, tok)

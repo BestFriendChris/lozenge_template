@@ -37,17 +37,3 @@ func TestToken_String(t *testing.T) {
 		---+-----------------+--------------------------------+
 		`)
 }
-
-func TestNewTokenMarker(t *testing.T) {
-	c := ic.New(t)
-	c.PrintSection("NewTokenMarker has empty .S field")
-	c.PV(NewTokenMarker(TTcustom))
-	c.Expect(`
-		################################################################################
-		# NewTokenMarker has empty .S field
-		################################################################################
-		Token.TT: TT.Custom
-		Token.Slc: ""
-		Token.E: 
-		`)
-}

@@ -11,7 +11,7 @@ import (
 )
 
 func TestInput_ReadWhile(t *testing.T) {
-	in := NewInput("foo bar")
+	in := NewInput("test", "foo bar")
 	ident := in.ReadWhile(func(r rune) bool {
 		isLetter := unicode.IsLetter(r) || r == '_'
 		return isLetter || unicode.IsNumber(r)
@@ -31,13 +31,13 @@ func TestInput_ReadWhile(t *testing.T) {
 		################################################################################
 		# ident
 		################################################################################
-		"foo"
+		test:1 - "foo"
 		`)
 }
 
 func TestInput_TryReadWhile(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
-		in := NewInput("(1 + (2 * 3))next")
+		in := NewInput("test", "(1 + (2 * 3))next")
 		var parenCount int
 		var foundAll bool
 		str, err := in.TryReadWhile(func(r rune, last bool) (bool, error) {
@@ -70,7 +70,7 @@ func TestInput_TryReadWhile(t *testing.T) {
 			################################################################################
 			# str
 			################################################################################
-			"(1 + (2 * 3))"
+			test:1 - "(1 + (2 * 3))"
 			################################################################################
 			# err
 			################################################################################
@@ -82,7 +82,7 @@ func TestInput_TryReadWhile(t *testing.T) {
 			`)
 	})
 	t.Run("error path", func(t *testing.T) {
-		in := NewInput("(1 + (2 * 3)next")
+		in := NewInput("test", "(1 + (2 * 3)next")
 		var parenCount int
 		var foundAll bool
 		str, err := in.TryReadWhile(func(r rune, last bool) (bool, error) {
@@ -115,7 +115,7 @@ func TestInput_TryReadWhile(t *testing.T) {
 			################################################################################
 			# str
 			################################################################################
-			""
+			<empty slice>
 			################################################################################
 			# err
 			################################################################################
@@ -131,7 +131,7 @@ func TestInput_TryReadWhile(t *testing.T) {
 }
 
 func TestInput_ConsumeWhenMatchesRegexp(t *testing.T) {
-	in := NewInput(`}   else {◊ foo`)
+	in := NewInput("test", `}   else {◊ foo`)
 	elseRegex := regexp.MustCompile(`}\s*else\s*{`)
 	match, found := in.ConsumeRegexp(elseRegex)
 	if !found {
@@ -147,7 +147,7 @@ func TestInput_ConsumeWhenMatchesRegexp(t *testing.T) {
 		################################################################################
 		# match
 		################################################################################
-		"}   else {"
+		test:1 - "}   else {"
 		################################################################################
 		# rest
 		################################################################################
@@ -158,7 +158,7 @@ func TestInput_ConsumeWhenMatchesRegexp(t *testing.T) {
 func TestInput_Pos(t *testing.T) {
 	t.Run("single line", func(t *testing.T) {
 		s := `only one line`
-		in := NewInput(s)
+		in := NewInput("test", s)
 		c := ic.New(t)
 
 		c.PrintSection("start")
@@ -192,7 +192,7 @@ func TestInput_Pos(t *testing.T) {
 this is line 1
 this is line 2
 this is line 3`[1:]
-		in := NewInput(s)
+		in := NewInput("test", s)
 		c := ic.New(t)
 
 		c.PrintSection("start")
@@ -235,6 +235,45 @@ this is line 3`[1:]
 			################################################################################
 			Position: Pos[line=3;col=15]
 			Rest: ""
+			`)
+	})
+}
+
+func TestInput_SliceAt(t *testing.T) {
+	t.Run("at newline break", func(t *testing.T) {
+		i := NewInput("test", "\nfoo")
+
+		c := ic.New(t)
+		{
+			c.PrintSection("the newline")
+			fmt.Printf("i.str[0:1]: %q\n", i.str[0:1])
+			slc := i.SliceAt(0, 1)
+			c.PVWN("S", slc.S)
+			c.PVWN("Start", slc.Start)
+			c.PVWN("End", slc.End)
+		}
+		{
+			c.PrintSection("second line")
+			fmt.Printf("i.str[1:2]: %q\n", i.str[1:2])
+			slc := i.SliceAt(1, 2)
+			c.PVWN("S", slc.S)
+			c.PVWN("Start", slc.Start)
+			c.PVWN("End", slc.End)
+		}
+
+		c.Expect(`
+			################################################################################
+			# the newline
+			################################################################################
+			S: "\n"
+			Start: Pos[line=1;col=1]
+			End: Pos[line=2;col=1]
+			################################################################################
+			# second line
+			################################################################################
+			S: "f"
+			Start: Pos[line=2;col=1]
+			End: Pos[line=2;col=2]
 			`)
 	})
 }

@@ -15,12 +15,10 @@ func Optimize(toks []*token.Token, trimSpaces bool) []*token.Token {
 		return newToks[len(newToks)-1]
 	}
 	appendNewToks := func(tok *token.Token, joinNewline bool) {
-		if cur := curTok(); cur != nil && cur.TT == tok.TT {
+		if cur := curTok(); cur != nil && cur.TT == tok.TT && cur.Slc.CanJoin(tok.Slc) {
 			curSlcLen := cur.Slc.Len()
-			if joinNewline && curSlcLen > 0 && cur.Slc.S[curSlcLen-1] != '\n' {
-				cur.Slc.S += "\n"
-			}
-			if curSlcLen+tok.Slc.Len() > 60 {
+			lastIsNL := cur.Slc.S[len(cur.Slc.S)-1] == '\n'
+			if lastIsNL || curSlcLen+tok.Slc.Len() > 60 {
 				newToks = append(newToks, tok)
 			} else {
 				cur.Slc = cur.Slc.Join(tok.Slc)

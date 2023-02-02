@@ -30,7 +30,7 @@ func (lt *LozengeTemplate) Generate(h interfaces.TemplateHandler, s string) (goC
 
 	var toks []*token.Token
 
-	in := input.NewInput(s)
+	in := input.NewInput("test", s)
 	toks, err = ct.ReadAll(in)
 	if err != nil {
 		return "", err

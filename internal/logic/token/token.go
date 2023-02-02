@@ -16,10 +16,6 @@ func NewToken(tt TokenType, s input.Slice) *Token {
 	return &Token{TT: tt, Slc: s}
 }
 
-func NewTokenMarker(tt TokenType) *Token {
-	return &Token{TT: tt}
-}
-
 func (t Token) String() string {
 	var str, extra string
 	if t.Slc.S != "" {

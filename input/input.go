@@ -10,14 +10,16 @@ import (
 )
 
 type Input struct {
+	name    string
 	str     string
 	idx     int
 	lineNo  int
 	lineIdx []int
 }
 
-func NewInput(s string) *Input {
+func NewInput(name string, s string) *Input {
 	return &Input{
+		name:    name,
 		str:     s,
 		lineNo:  1,
 		lineIdx: makeLineIdx(s),
@@ -83,11 +85,7 @@ func (i *Input) SliceOffset(offset int) Slice {
 }
 
 func (i *Input) SliceAt(from, to int) Slice {
-	return Slice{
-		S:     i.str[from:to],
-		Start: i.PosAt(from),
-		End:   i.PosAt(to),
-	}
+	return NewSlice(i.name, i.str[from:to], i.PosAt(from), i.PosAt(to))
 }
 
 func (i *Input) Consumed() bool {
@@ -104,12 +102,13 @@ func (i *Input) Consume(r rune) bool {
 	}
 }
 
-func (i *Input) ConsumeString(prefix string) bool {
+func (i *Input) ConsumeString(prefix string) (Slice, bool) {
 	if i.HasPrefix(prefix) {
+		slc := i.SliceOffset(len(prefix))
 		i.SeekOffset(len(prefix))
-		return true
+		return slc, true
 	} else {
-		return false
+		return EmptySlice(), false
 	}
 }
 
@@ -255,7 +254,7 @@ func (i *Input) col() int {
 func (i *Input) findLineAndCol(idx int) (line, col int) {
 	line, col = -1, -1
 	for lineNo, endIdx := range i.lineIdx {
-		if idx <= endIdx {
+		if idx < endIdx || idx == len(i.str) {
 			line = lineNo + 1
 			break
 		}

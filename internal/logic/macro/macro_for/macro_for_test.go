@@ -22,7 +22,7 @@ for _, v := range vals {◊
 		macroFor := New()
 
 		var tokens []*token.Token
-		in := input.NewInput(s)
+		in := input.NewInput("test", s)
 		tokens, _ = macroFor.NextTokens(ct, in)
 		rest := in.Rest()
 
@@ -72,7 +72,7 @@ for _, v := range vals
 
 		macroFor := New()
 
-		in := input.NewInput(s)
+		in := input.NewInput("test", s)
 		_, err := macroFor.NextTokens(ct, in)
 
 		c := ic.New(t)
@@ -98,7 +98,7 @@ for _, v := range vals {◊
 
 		macroFor := New()
 
-		in := input.NewInput(s)
+		in := input.NewInput("test", s)
 		_, err := macroFor.NextTokens(ct, in)
 
 		c := ic.New(t)

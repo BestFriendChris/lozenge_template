@@ -214,7 +214,7 @@ func (ct *ContentTokenizer) parseMacroIdentifier(lozSlc *token.Token, in *input.
 			tokens = append(tokens, nextToken)
 		}
 	} else {
-		return nil, fmt.Errorf("unknown macro %s", identifier)
+		return nil, fmt.Errorf("unknown macro %q", identifier.S)
 	}
 	return
 }

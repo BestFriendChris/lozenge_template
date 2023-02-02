@@ -14,7 +14,7 @@ import (
 
 func TestParser_Parse(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
-		in := input.NewInput(`
+		in := input.NewInput("test", `
 input "fmt"
 val := 1
 foo = 
@@ -50,7 +50,7 @@ val
 			`)
 	})
 	t.Run("with macros", func(t *testing.T) {
-		in := input.NewInput(`
+		in := input.NewInput("test", `
 input "fmt"
 val := 1
 if val == 1 {
