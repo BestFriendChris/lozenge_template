@@ -5,78 +5,165 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/BestFriendChris/go-ic/ic"
+	"github.com/BestFriendChris/lozenge_template/input"
 	"github.com/BestFriendChris/lozenge_template/internal/infra/go_format"
-	"github.com/andreyvit/diff"
 )
 
 func Test_WriteContent(t *testing.T) {
 	th := MainHandler{}
-	th.WriteTextContent("foo")
-	th.WriteTextContent("bar")
+	i := input.NewInput("test", "foo\nbar")
+	th.WriteTextContent(nextSlice(i, "foo"))
+	nextSlice(i, "\n")
+	th.WriteTextContent(nextSlice(i, "bar"))
 
 	{
 		got := th.Content
-		want := []string{"foo", "bar"}
+		want := []string{`test:1 - "foo"`, `test:2 - "bar"`}
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("got %v want %v", got, want)
 		}
 	}
 
-	{
-		got, _ := th.Done()
-		got = formatCode(t, got)
-		want := wantFormatted(t, ``, `
-buf.WriteString("foo")
-buf.WriteString("bar")`[1:])
-		assertEqualDiff(t, got, want)
-	}
+	got, _ := th.Done()
+	got = formatCode(t, got)
+
+	c := ic.New(t)
+	c.PrintSection("Formatted code")
+	c.Println(got)
+	c.Expect(`
+		################################################################################
+		# Formatted code
+		################################################################################
+		package main
+		
+		import (
+			"bytes"
+			"fmt"
+		)
+		
+		func main() {
+			buf := new(bytes.Buffer)
+		//line test:1
+			buf.WriteString("foo")
+		//line test:2
+			buf.WriteString("bar")
+			fmt.Print(buf.String())
+		}
+		
+		`)
 }
 
 func Test_WriteCodeExpression(t *testing.T) {
 	th := MainHandler{}
-	th.WriteCodeLocalExpression("foo")
-	th.WriteCodeLocalExpression("bar")
+	i := input.NewInput("test", "foo\nbar")
+	th.WriteCodeLocalExpression(nextSlice(i, "foo"))
+	_ = nextSlice(i, "\n")
+	th.WriteCodeLocalExpression(nextSlice(i, "bar"))
 
 	got, _ := th.Done()
 	got = formatCode(t, got)
-	want := wantFormatted(t, ``, `
-buf.WriteString(fmt.Sprintf("%v", foo))
-buf.WriteString(fmt.Sprintf("%v", bar))`[1:])
-	assertEqualDiff(t, got, want)
+
+	c := ic.New(t)
+	c.PrintSection("Formatted code")
+	c.Println(got)
+	c.Expect(`
+		################################################################################
+		# Formatted code
+		################################################################################
+		package main
+		
+		import (
+			"bytes"
+			"fmt"
+		)
+		
+		func main() {
+			buf := new(bytes.Buffer)
+		//line test:1
+			buf.WriteString(fmt.Sprintf("%v", foo))
+		//line test:2
+			buf.WriteString(fmt.Sprintf("%v", bar))
+			fmt.Print(buf.String())
+		}
+		
+		`)
 }
 
 func Test_WriteCodeBlock(t *testing.T) {
 	th := MainHandler{}
-	th.WriteCodeLocalBlock("foo := 1")
-	th.WriteCodeLocalBlock("bar := 2")
+	i := input.NewInput("test", "foo := 1\nbar := 2")
+	th.WriteCodeLocalBlock(nextSlice(i, "foo := 1"))
+	nextSlice(i, "\n")
+	th.WriteCodeLocalBlock(nextSlice(i, "bar := 2"))
 
 	got, _ := th.Done()
 	got = formatCode(t, got)
-	want := wantFormatted(t, ``, `
-foo := 1
-bar := 2`[1:])
-	assertEqualDiff(t, got, want)
+
+	c := ic.New(t)
+	c.PrintSection("Formatted code")
+	c.Println(got)
+	c.Expect(`
+		################################################################################
+		# Formatted code
+		################################################################################
+		package main
+		
+		import (
+			"bytes"
+			"fmt"
+		)
+		
+		func main() {
+			buf := new(bytes.Buffer)
+		//line test:1
+			foo := 1
+		//line test:2
+			bar := 2
+			fmt.Print(buf.String())
+		}
+		
+		`)
 }
 
 func Test_WriteCodeGlobalBlock(t *testing.T) {
 	th := MainHandler{}
-	th.WriteCodeGlobalBlock("var foo = 1")
-	th.WriteCodeGlobalBlock("var bar = 2")
+	i := input.NewInput("test", "var foo = 1\nvar bar = 2")
+	th.WriteCodeGlobalBlock(nextSlice(i, "var foo = 1"))
+	nextSlice(i, "\n")
+	th.WriteCodeGlobalBlock(nextSlice(i, "var bar = 2"))
 
 	got, _ := th.Done()
 	got = formatCode(t, got)
-	want := wantFormatted(
-		t,
-		`
-var foo = 1
-var bar = 2`[1:],
-		``)
-	assertEqualDiff(t, got, want)
-}
 
-func wantFormatted(t *testing.T, global, inline string) string {
-	s := fmt.Sprintf(format, global, inline)
-	return formatCode(t, s)
+	c := ic.New(t)
+	c.PrintSection("Formatted code")
+	c.Println(got)
+	c.Expect(`
+		################################################################################
+		# Formatted code
+		################################################################################
+		package main
+		
+		import (
+			"bytes"
+			"fmt"
+		)
+		
+		//line test:1
+		var (
+			foo = 1
+		//line test:2
+			bar = 2
+		)
+		
+		func main() {
+			buf := new(bytes.Buffer)
+		
+			fmt.Print(buf.String())
+		}
+		
+		`)
 }
 
 func formatCode(t *testing.T, s string) string {
@@ -87,9 +174,10 @@ func formatCode(t *testing.T, s string) string {
 	return formatted
 }
 
-func assertEqualDiff(t *testing.T, got, want string) {
-	t.Helper()
-	if got != want {
-		t.Errorf("diff:\n-got\n+want\n=====\n%v", diff.LineDiff(got, want))
+func nextSlice(i *input.Input, prefix string) input.Slice {
+	slice, found := i.ConsumeString(prefix)
+	if !found {
+		panic(fmt.Sprintf("incorrect prefix: %q\ninput: %q", prefix, i.Rest()))
 	}
+	return slice
 }

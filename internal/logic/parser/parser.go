@@ -23,13 +23,13 @@ func (p *DefaultParser) Parse(h interfaces.TemplateHandler, toks []*token.Token)
 		idx = i
 		switch tok.TT {
 		case token.TTcontent, token.TTnl, token.TTws:
-			h.WriteTextContent(tok.Slc.S)
+			h.WriteTextContent(tok.Slc)
 		case token.TTcodeGlobalBlock:
-			h.WriteCodeGlobalBlock(tok.Slc.S)
+			h.WriteCodeGlobalBlock(tok.Slc)
 		case token.TTcodeLocalBlock:
-			h.WriteCodeLocalBlock(tok.Slc.S)
+			h.WriteCodeLocalBlock(tok.Slc)
 		case token.TTcodeLocalExpr:
-			h.WriteCodeLocalExpression(tok.Slc.S)
+			h.WriteCodeLocalExpression(tok.Slc)
 		case token.TTmacro:
 			if p.macros == nil {
 				return toks, fmt.Errorf("parser: unknown macro %q", tok.Slc.S)

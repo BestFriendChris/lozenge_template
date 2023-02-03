@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/BestFriendChris/lozenge_template/input"
 	"github.com/BestFriendChris/lozenge_template/interfaces"
 )
 
@@ -17,20 +18,33 @@ func (th *MainHandler) DefaultMacros() *interfaces.Macros {
 	return nil
 }
 
-func (th *MainHandler) WriteTextContent(s string) {
-	th.Content = append(th.Content, s)
-	th.InlineOutput = append(th.InlineOutput, fmt.Sprintf("buf.WriteString(%q)", s))
-}
-
-func (th *MainHandler) WriteCodeLocalExpression(s string) {
-	th.InlineOutput = append(th.InlineOutput, fmt.Sprintf("buf.WriteString(fmt.Sprintf(%q, %s))", "%v", s))
-}
-
-func (th *MainHandler) WriteCodeLocalBlock(s string) {
+func (th *MainHandler) WriteTextContent(slc input.Slice) {
+	th.Content = append(th.Content, slc.String())
+	s := fmt.Sprintf(
+		"%sbuf.WriteString(%q)",
+		locationComment(slc),
+		slc.S,
+	)
 	th.InlineOutput = append(th.InlineOutput, s)
 }
 
-func (th *MainHandler) WriteCodeGlobalBlock(s string) {
+func (th *MainHandler) WriteCodeLocalExpression(slc input.Slice) {
+	s := fmt.Sprintf(
+		"%sbuf.WriteString(fmt.Sprintf(%q, %s))",
+		locationComment(slc),
+		"%v",
+		slc.S,
+	)
+	th.InlineOutput = append(th.InlineOutput, s)
+}
+
+func (th *MainHandler) WriteCodeLocalBlock(slc input.Slice) {
+	s := fmt.Sprintf("%s%s", locationComment(slc), slc.S)
+	th.InlineOutput = append(th.InlineOutput, s)
+}
+
+func (th *MainHandler) WriteCodeGlobalBlock(slc input.Slice) {
+	s := fmt.Sprintf("%s%s", locationComment(slc), slc.S)
 	th.GlobalCode = append(th.GlobalCode, s)
 }
 
@@ -52,4 +66,8 @@ func (th *MainHandler) Done() (string, error) {
 		strings.Join(th.GlobalCode, "\n"),
 		strings.Join(th.InlineOutput, "\n"),
 	), nil
+}
+
+func locationComment(slc input.Slice) string {
+	return fmt.Sprintf("//line %s:%d\n", slc.Name, slc.Start.Row)
 }

@@ -270,3 +270,22 @@ func (i *Input) findLineAndCol(idx int) (line, col int) {
 	col = (idx - leftIdx) + 1
 	return line, col
 }
+
+func (i *Input) SplitNewline(slc Slice) []Slice {
+	if i.name != slc.Name {
+		panic(fmt.Sprintf("unable to split splice from different file. got %q want %q", slc.Name, i.name))
+	}
+	var slices []Slice
+	split := strings.Split(slc.S, "\n")
+	startIdx := slc.Start.Idx
+	for _, s := range split {
+		if strings.TrimSpace(s) == "" {
+			startIdx += len(s) + 1
+			continue
+		}
+		endIdx := startIdx + len(s)
+		slices = append(slices, i.SliceAt(startIdx, endIdx))
+		startIdx = endIdx + 1
+	}
+	return slices
+}

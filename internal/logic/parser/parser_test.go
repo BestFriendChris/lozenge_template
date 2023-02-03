@@ -38,15 +38,15 @@ val
 			################################################################################
 			# GLOBAL
 			################################################################################
-			input "fmt"
+			/* line test:1 */ input "fmt"
 			
 			################################################################################
 			# LOCAL
 			################################################################################
-			val := 1
-			fmt.Print("foo = ")
-			fmt.Printf("%v", val)
-			fmt.Print("\n")
+			/* line test:2 */ val := 1
+			/* line test:3 */ fmt.Print("foo = ")
+			/* line test:4 */ fmt.Printf("%v", val)
+			/* line test:4 */ fmt.Print("\n")
 			`)
 	})
 	t.Run("with macros", func(t *testing.T) {
@@ -84,17 +84,17 @@ val
 			################################################################################
 			# GLOBAL
 			################################################################################
-			input "fmt"
+			/* line test:1 */ input "fmt"
 			
 			################################################################################
 			# LOCAL
 			################################################################################
-			val := 1
-			if val == 1 {
-			fmt.Print("foo = ")
-			fmt.Printf("%v", val)
-			fmt.Print("\n")
-			}
+			/* line test:2 */ val := 1
+			/* line test:3 */ if val == 1 {
+			/* line test:4 */ fmt.Print("foo = ")
+			/* line test:5 */ fmt.Printf("%v", val)
+			/* line test:6 */ fmt.Print("\n")
+			/* line test:7 */ }
 			`)
 	})
 }
@@ -107,19 +107,21 @@ func (h *testHandler) DefaultMacros() *interfaces.Macros {
 	return nil
 }
 
-func (h *testHandler) WriteTextContent(s string) {
-	_, _ = fmt.Fprintf(&h.LocalOutput, "fmt.Print(%q)\n", s)
+func (h *testHandler) WriteTextContent(slc input.Slice) {
+	_, _ = fmt.Fprintf(&h.LocalOutput, "%s fmt.Print(%q)\n", line(slc), slc.S)
 }
 
-func (h *testHandler) WriteCodeLocalExpression(s string) {
-	_, _ = fmt.Fprintf(&h.LocalOutput, "fmt.Printf(%q, %s)\n", `%v`, s)
+func (h *testHandler) WriteCodeLocalExpression(slc input.Slice) {
+	_, _ = fmt.Fprintf(&h.LocalOutput, "%s fmt.Printf(%q, %s)\n", line(slc), `%v`, slc.S)
 }
 
-func (h *testHandler) WriteCodeLocalBlock(s string) {
+func (h *testHandler) WriteCodeLocalBlock(slc input.Slice) {
+	s := fmt.Sprintf("%s %s", line(slc), slc.S)
 	_, _ = fmt.Fprintln(&h.LocalOutput, s)
 }
 
-func (h *testHandler) WriteCodeGlobalBlock(s string) {
+func (h *testHandler) WriteCodeGlobalBlock(slc input.Slice) {
+	s := fmt.Sprintf("%s %s", line(slc), slc.S)
 	_, _ = fmt.Fprintln(&h.GlobalOutput, s)
 }
 
@@ -136,4 +138,8 @@ func (h *testHandler) Done() (string, error) {
 	_, _ = fmt.Fprintln(&sb, "################################################################################")
 	_, _ = fmt.Fprint(&sb, h.LocalOutput.String())
 	return sb.String(), nil
+}
+
+func line(slc input.Slice) string {
+	return fmt.Sprintf("/* line %s:%d */", slc.Name, slc.Start.Row)
 }

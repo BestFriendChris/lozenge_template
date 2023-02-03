@@ -12,6 +12,6 @@ type Tokenizer interface {
 type ContentTokenizer interface {
 	NextTokenCodeUntilOpenBraceLoz(in *input.Input) (*token.Token, error)
 	ReadTokensUntil(in *input.Input, stopAt string) ([]*token.Token, error)
-	ParseGoCodeFromTo(in *input.Input, tt token.TokenType, open, close rune, keep bool) (*token.Token, error)
-	ParseGoToClosingBrace(in *input.Input) (*token.Token, error)
+	ParseGoCodeFromTo(in *input.Input, tt token.TokenType, open, close rune, keep bool) ([]*token.Token, error)
+	ParseGoToClosingBrace(in *input.Input) ([]*token.Token, error)
 }

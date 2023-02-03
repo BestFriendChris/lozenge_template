@@ -246,7 +246,6 @@ func TestInput_SliceAt(t *testing.T) {
 		c := ic.New(t)
 		{
 			c.PrintSection("the newline")
-			fmt.Printf("i.str[0:1]: %q\n", i.str[0:1])
 			slc := i.SliceAt(0, 1)
 			c.PVWN("S", slc.S)
 			c.PVWN("Start", slc.Start)
@@ -254,7 +253,6 @@ func TestInput_SliceAt(t *testing.T) {
 		}
 		{
 			c.PrintSection("second line")
-			fmt.Printf("i.str[1:2]: %q\n", i.str[1:2])
 			slc := i.SliceAt(1, 2)
 			c.PVWN("S", slc.S)
 			c.PVWN("Start", slc.Start)
@@ -274,6 +272,74 @@ func TestInput_SliceAt(t *testing.T) {
 			S: "f"
 			Start: Pos[line=2;col=1]
 			End: Pos[line=2;col=2]
+			`)
+	})
+}
+
+func TestInput_SplitNewline(t *testing.T) {
+	t.Run("when no newlines", func(t *testing.T) {
+		s := `START{ foo }END`
+		i := NewInput("test", s)
+		from, to := strings.Index(s, "{"), strings.Index(s, "END")
+		slc := i.SliceAt(from, to)
+		splitSlice := i.SplitNewline(slc)
+
+		c := ic.New(t)
+		c.PrintSection("original slice")
+		c.PV(slc)
+		c.PrintSection("split slices")
+		c.PT(splitSlice)
+
+		c.Expect(`
+			################################################################################
+			# original slice
+			################################################################################
+			Slice.Name: "test"
+			Slice.S: "{ foo }"
+			Slice.Start: Pos[line=1;col=6]
+			Slice.End: Pos[line=1;col=13]
+			################################################################################
+			# split slices
+			################################################################################
+			   | Name   | S         | Start             | End                |
+			---+--------+-----------+-------------------+--------------------+
+			 1 | "test" | "{ foo }" | Pos[line=1;col=6] | Pos[line=1;col=13] |
+			---+--------+-----------+-------------------+--------------------+
+			`)
+	})
+	t.Run("when newlines", func(t *testing.T) {
+		s := `START{
+foo
+bar
+}END`
+		i := NewInput("test", s)
+		from, to := strings.Index(s, "{")+1, strings.Index(s, "}")
+		slc := i.SliceAt(from, to)
+		splitSlice := i.SplitNewline(slc)
+
+		c := ic.New(t)
+		c.PrintSection("original slice")
+		c.PV(slc)
+		c.PrintSection("split slices")
+		c.PT(splitSlice)
+
+		c.Expect(`
+			################################################################################
+			# original slice
+			################################################################################
+			Slice.Name: "test"
+			Slice.S: "\nfoo\nbar\n"
+			Slice.Start: Pos[line=1;col=7]
+			Slice.End: Pos[line=4;col=1]
+			################################################################################
+			# split slices
+			################################################################################
+			   | Name   | S     | Start             | End               |
+			---+--------+-------+-------------------+-------------------+
+			 1 | "test" | "foo" | Pos[line=2;col=1] | Pos[line=2;col=4] |
+			---+--------+-------+-------------------+-------------------+
+			 2 | "test" | "bar" | Pos[line=3;col=1] | Pos[line=3;col=4] |
+			---+--------+-------+-------------------+-------------------+
 			`)
 	})
 }

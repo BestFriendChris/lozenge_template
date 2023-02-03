@@ -150,14 +150,6 @@ func (ct *ContentTokenizer) NextTokenCodeUntilOpenBraceLoz(in *input.Input) (*to
 }
 
 func (ct *ContentTokenizer) parseLozenge(in *input.Input) ([]*token.Token, error) {
-	wrap := func(tok *token.Token, err error) ([]*token.Token, error) {
-		if err != nil {
-			return nil, err
-		} else {
-			return []*token.Token{tok}, nil
-		}
-	}
-
 	loz := token.NewToken(token.TTcontent, in.SliceOffset(-utf8.RuneLen(ct.loz)))
 	singletonLoz := []*token.Token{loz}
 	r, found := in.Peek()
@@ -168,9 +160,9 @@ func (ct *ContentTokenizer) parseLozenge(in *input.Input) ([]*token.Token, error
 	case ' ', '\n':
 		return singletonLoz, nil
 	case '{':
-		return wrap(ct.ParseGoCodeFromTo(in, token.TTcodeLocalBlock, '{', '}', false))
+		return ct.ParseGoCodeFromTo(in, token.TTcodeLocalBlock, '{', '}', false)
 	case '(':
-		return wrap(ct.ParseGoCodeFromTo(in, token.TTcodeLocalExpr, '(', ')', true))
+		return ct.ParseGoCodeFromTo(in, token.TTcodeLocalExpr, '(', ')', true)
 	case '.':
 		in.Shift(r)
 		return ct.parseMacroIdentifier(loz, in)
@@ -178,7 +170,7 @@ func (ct *ContentTokenizer) parseLozenge(in *input.Input) ([]*token.Token, error
 		in.Shift(r)
 		r, found = in.Peek()
 		if found && r == '{' {
-			return wrap(ct.ParseGoCodeFromTo(in, token.TTcodeGlobalBlock, '{', '}', false))
+			return ct.ParseGoCodeFromTo(in, token.TTcodeGlobalBlock, '{', '}', false)
 		} else {
 			in.Unshift('^')
 			return singletonLoz, nil
@@ -191,7 +183,7 @@ func (ct *ContentTokenizer) parseLozenge(in *input.Input) ([]*token.Token, error
 		if identifier.Len() == 0 {
 			return singletonLoz, nil
 		} else {
-			return wrap(token.NewToken(token.TTcodeLocalExpr, identifier), nil)
+			return []*token.Token{token.NewToken(token.TTcodeLocalExpr, identifier)}, nil
 		}
 	}
 }
@@ -219,7 +211,7 @@ func (ct *ContentTokenizer) parseMacroIdentifier(lozSlc *token.Token, in *input.
 	return
 }
 
-func (ct *ContentTokenizer) ParseGoToClosingBrace(in *input.Input) (*token.Token, error) {
+func (ct *ContentTokenizer) ParseGoToClosingBrace(in *input.Input) ([]*token.Token, error) {
 	var tt token.TokenType
 	if in.Consume('^') {
 		tt = token.TTcodeGlobalBlock
@@ -229,7 +221,7 @@ func (ct *ContentTokenizer) ParseGoToClosingBrace(in *input.Input) (*token.Token
 	return ct.ParseGoCodeFromTo(in, tt, '{', '}', false)
 }
 
-func (ct *ContentTokenizer) ParseGoCodeFromTo(in *input.Input, tt token.TokenType, open, close rune, keep bool) (*token.Token, error) {
+func (ct *ContentTokenizer) ParseGoCodeFromTo(in *input.Input, tt token.TokenType, open, close rune, isExpr bool) ([]*token.Token, error) {
 	var openCloseCount int
 	var foundBalance, inString, inBackQuotes, inChar, escapeInQuote bool
 	goCode, err := in.TryReadWhile(func(r rune, last bool) (bool, error) {
@@ -270,10 +262,19 @@ func (ct *ContentTokenizer) ParseGoCodeFromTo(in *input.Input, tt token.TokenTyp
 	if err != nil {
 		return nil, err
 	}
-	if !keep {
+	var toks []*token.Token
+	if isExpr {
+		toks = append(toks, token.NewToken(tt, goCode))
+	} else {
+		// Strip out start and end brace
 		goCode = in.SliceAt(goCode.Start.Idx+1, goCode.End.Idx-1)
+		// Split on newlines
+		splitGoCode := in.SplitNewline(goCode)
+		for _, slc := range splitGoCode {
+			toks = append(toks, token.NewToken(tt, slc))
+		}
 	}
-	return token.NewToken(tt, goCode), nil
+	return toks, nil
 }
 
 func isLetter(r rune) bool {
